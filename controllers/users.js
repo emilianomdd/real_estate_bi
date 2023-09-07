@@ -13,7 +13,7 @@ const Volume = require('../models/total_volumes')
 // const nodemailer = require('nodemailer')
 // const crypto = require('crypto')
 const XLSX = require('xlsx');
-// var workbook = XLSX.readFile("controllers\\marketintelligence_09_06_2023.xlsx")
+// var workbook = XLSX.readFile("controllers\\mktintelligence_07_09_2023.xlsx")
 const { cloudinary } = require("../cloudinary");
 const AvgMktCap = require('../models/avg_market_cap');
 const axios = require('axios')
@@ -366,7 +366,7 @@ module.exports.renderCoin = async (req, res) => {
 //     console.log('populate_data')
 
 //     var currentDate = new Date();
-//     var formattedDate = (currentDate.getMonth() + 1) + '/' + (currentDate.getDate() - 1) + '/' + currentDate.getFullYear();
+//     var formattedDate = (currentDate.getMonth() + 1) + '/' + (currentDate.getDate()) + '/' + currentDate.getFullYear();
 //     console.log(formattedDate)
 //     let worksheet_coins = workbook.Sheets['By_Coin']
 //     let worksheet_spot = workbook.Sheets['Spot']
