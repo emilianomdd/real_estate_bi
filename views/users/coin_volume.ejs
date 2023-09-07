@@ -1,7 +1,7 @@
 <% layout('layouts/boilerplate')%>
 
 
-
+<div class="container">
     <div class="row">
         <div class="col-8">
             <canvas id="myChart"></canvas>
@@ -33,7 +33,7 @@
         <h2>Summation: $<%=parseFloat(summation).toLocaleString()%></h2>
         <h2>Average: $<%=parseFloat(average).toLocaleString()%></h2>
     </div>
-
+</div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         var volumes = <%- JSON.stringify(volumes) %>;
