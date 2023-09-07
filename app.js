@@ -140,7 +140,7 @@ app.use('/', userRoutes);
 
 
 app.get('/', (req, res) => {
-    res.render('home')
+    res.render('/login')
 });
 
 app.all('*', (req, res, next) => {
