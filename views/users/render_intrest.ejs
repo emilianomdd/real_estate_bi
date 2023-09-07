@@ -28,10 +28,14 @@
             <a href="/render_plat?platform=<%=name%>">View <%=name%>'s Spot Traffic</a>
         </div>
        
-        <h2>High: $<%=parseFloat(high).toLocaleString()%></h2>
+        <h2>High: <%=parseFloat(high).toLocaleString()%></h2>
+        <div>High in Profit: $<%= (parseFloat(high) * 0.001).toLocaleString() %>  </div>
         <h2>Low: $<%=parseFloat(low).toLocaleString()%></h2>
+        <div>Low in Profit: $<%= (parseFloat(low) * 0.001).toLocaleString() %></div>
         <h2>Summation: $<%=parseFloat(summation).toLocaleString()%></h2>
+        <div>Summation in Profit: $<%= (parseFloat(summation) * 0.001).toLocaleString() %></div>
         <h2>Average: $<%=parseFloat(average).toLocaleString()%></h2>
+        <div>Average Profits: $<%= (parseFloat(average) * 0.001).toLocaleString() %></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
