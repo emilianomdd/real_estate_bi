@@ -1,0 +1,28 @@
+<% layout('layouts/boilerplate')%>
+
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+    <script>
+
+        var dates = <%- JSON.stringify(dates) %>;
+        var volumes = <%- JSON.stringify(volumes) %>;
+        const ctx = document.getElementById('myChart');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Coin Price',
+                    data: volumes,
+                    borderWidth: 1
+                }]
+            },
+
+        });
+    </script>
