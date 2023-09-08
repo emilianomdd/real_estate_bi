@@ -26,7 +26,7 @@ router.get('/render_week', users.renderWeekly)
 router.get('/render_der', users.renderDer)
 router.get('/render_intrest', users.renderIntrest)
 router.post('register_special', users.register)
-
+router.get('/render_news', users.renderNews)
 router.get('/render_vendor_register/:id', users.RenderVendor)
 
 router.get('/render_stripe/:id', users.RenderStripe)

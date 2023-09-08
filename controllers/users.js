@@ -21,6 +21,7 @@ const jsdom = require('jsdom');
 const { JSDOM } = jsdom;
 const OpenAI = require("openai");
 const cheerio = require('cheerio')
+const News = require('../models/news')
 
 
 module.exports.sacarInfo = async (req, res) => {
@@ -50,13 +51,11 @@ module.exports.sacarInfo = async (req, res) => {
 
         }
 
-
-
+        const news = new News()
+        news.news_num = good_links.length
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_KEY
         });
-        const summaries = []
-        const article_links = []
         for (let link of good_links) {
             const articles = await axios.get(link)
             const $ = cheerio.load(articles.data)
@@ -70,17 +69,32 @@ module.exports.sacarInfo = async (req, res) => {
                 max_tokens: 1000
             });
 
-            article_links.push(link)
-
-            summaries.push(gpt4Response.choices[0].message.content)
-            console.log(gpt4Response.choices[0].message.content)
-
+            news.news.push({
+                link: link,
+                summary: gpt4Response.choices[0].message.content
+            })
+            console.log(news)
+            await news.save()
         }
-        res.render('users/news', { article_links, summaries })
+        res.render('home')
     } catch (e) {
         console.log(e)
         res.render('home')
     }
+}
+
+module.exports.renderNews = async (req, res) => {
+    const all_news = await News.find()
+    const news = all_news[0]
+    const links = []
+    const articles = []
+    const last_news = news.news.length - 1
+    for (let i = 0; i < news.news_num; i++) {
+        console.log(last_news - i)
+        links.push(news.news[last_news - i].link)
+        articles.push(news.news[last_news - i].summary)
+    }
+    res.render('users/news', { links, articles })
 }
 
 module.exports.renderRegister = (req, res) => {
