@@ -25,57 +25,62 @@ const cheerio = require('cheerio')
 
 module.exports.sacarInfo = async (req, res) => {
 
-    var all_links = []
-    var good_links = []
-    const response = await axios.get('https://www.coindesk.com/')
-        .then(response => {
-            const dom = new JSDOM(response.data);
-            const document = dom.window.document;
-            const links = Array.from(document.querySelectorAll('a'))
-                .map(a => a.href);
-            all_links = links
+    try {
+        var all_links = []
+        var good_links = []
+        const response = await axios.get('https://www.coindesk.com/')
+            .then(response => {
+                const dom = new JSDOM(response.data);
+                const document = dom.window.document;
+                const links = Array.from(document.querySelectorAll('a'))
+                    .map(a => a.href);
+                all_links = links
 
-        })
-        .catch(error => {
-            console.log('Error:', error);
-        });
-    for (let i = 0; i < all_links.length; i++) {
-        const each_link = all_links[i]
-        if (each_link.includes('author')) {
-            if (!all_links[i - 1].includes('author')) {
-                good_links.push('https://www.coindesk.com' + all_links[i - 1])
+            })
+            .catch(error => {
+                console.log('Error:', error);
+            });
+        for (let i = 0; i < all_links.length; i++) {
+            const each_link = all_links[i]
+            if (each_link.includes('author')) {
+                if (!all_links[i - 1].includes('author')) {
+                    good_links.push('https://www.coindesk.com' + all_links[i - 1])
+                }
             }
+
         }
 
-    }
 
 
-
-    const openai = new OpenAI({
-        apiKey: process.env.OPENAI_KEY
-    });
-    const summaries = []
-    const article_links = []
-    for (let link of good_links) {
-        const articles = await axios.get(link)
-        const $ = cheerio.load(articles.data)
-        const articleText = $('p').map((i, el) => $(el).text()).get().join(' ');
-
-        // Use GPT-4 to summarize
-        const prompt = `Please summarize the following article: ${articleText}`;
-        const gpt4Response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ "role": "user", "content": `${prompt}` }],
-            max_tokens: 1000
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_KEY
         });
+        const summaries = []
+        const article_links = []
+        for (let link of good_links) {
+            const articles = await axios.get(link)
+            const $ = cheerio.load(articles.data)
+            const articleText = $('p').map((i, el) => $(el).text()).get().join(' ');
 
-        article_links.push(link)
+            // Use GPT-4 to summarize
+            const prompt = `Please summarize the following article: ${articleText}`;
+            const gpt4Response = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages: [{ "role": "user", "content": `${prompt}` }],
+                max_tokens: 1000
+            });
 
-        summaries.push(gpt4Response.choices[0].message.content)
-        console.log(gpt4Response.choices[0].message.content)
+            article_links.push(link)
 
+            summaries.push(gpt4Response.choices[0].message.content)
+            console.log(gpt4Response.choices[0].message.content)
+
+        }
+        res.render('users/news', { article_links, summaries })
+    } catch (e) {
+        console.log(e)
+        res.render('home')
     }
-    res.render('users/news', { article_links, summaries })
 }
 
 module.exports.renderRegister = (req, res) => {
