@@ -1,0 +1,22 @@
+<% layout('layouts/boilerplate')%>
+
+
+    <div class="container">
+        <div class="row">
+            <div class="mt-6 col-4">
+
+                <label for="coin">Look up a specific platform:</label>
+                <select name="platform" id="platform">
+                    <% for (let i=0; i < article_links.length; i++){ %>
+                        <a href="<%=article_links[i]%>">Link to article</a>
+                        <div>
+                            <%=summaries[i]%>
+                        </div>
+                        <%}%>
+                </select>
+            </div>
+
+
+
+        </div>
+    </div>
