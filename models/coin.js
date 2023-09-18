@@ -19,7 +19,8 @@ const CoinSchema = new Schema({
     market_cap: [{
         date: Date,
         market_cap: Number
-    }]
+    }],
+    summary: String
 });
 
 

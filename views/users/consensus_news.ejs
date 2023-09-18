@@ -11,11 +11,14 @@
         <div class="row">
             <div class="mt-6 col-10">
 
-                <% for (let i=0; i < links.length; i++){ %>
+                <% for (let i=0; i < each_new.length; i++){ %>
                     <p>
-                        <a href="<%=links[i]%>">Link to article</a>
+                        <a href="<%=each_new[i].link%>">Link to article</a>
+                    <H2>
+                        <%=each_new[i].title%>
+                    </H2>
                     <div>
-                        <%=articles[i]%>
+                        <%=each_new[i].summary%>
                     </div>
                     <%}%>
                         </p>

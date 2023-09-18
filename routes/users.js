@@ -78,6 +78,16 @@ router.post('/complete_tab/:id', users.tabDelivered)
 
 router.get('/sacar_info', users.sacarInfo)
 
+router.get('/resumenes', users.summarizeCoins)
+
+router.get('/business_news', users.renderBusiness)
+
+router.get('/consensus_news', users.renderConsensus)
+
+router.get('/policy_news', users.renderPolicy)
+
+router.get('/market_news', users.renderMarkets)
+
 // router.route('/forgot')
 //     .get(users.renderForgot)
 //     .post(users.forgot)

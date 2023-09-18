@@ -7,7 +7,8 @@ const NewsSchema = new Schema({
     news: [{
         link: String,
         summary: String,
-        category: String
+        category: String,
+        title: String
     }]
 });
 

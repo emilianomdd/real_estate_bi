@@ -13,7 +13,7 @@ const Volume = require('../models/total_volumes')
 // const nodemailer = require('nodemailer')
 // const crypto = require('crypto')
 const XLSX = require('xlsx');
-// var workbook = XLSX.readFile("controllers\\mktintelligence_07_09_2023.xlsx")
+// var workbook = XLSX.readFile("controllers\\marketintelligence_18_09_2023.xlsx")
 const { cloudinary } = require("../cloudinary");
 const AvgMktCap = require('../models/avg_market_cap');
 const axios = require('axios')
@@ -22,6 +22,93 @@ const { JSDOM } = jsdom;
 const OpenAI = require("openai");
 const cheerio = require('cheerio')
 const News = require('../models/news')
+
+module.exports.renderBusiness = async (req, res) => {
+    console.log('renderBusiness')
+    const find_news = await News.find()
+    const news = find_news[0]
+    console.log(news)
+    const each_new = []
+    for (let one_new of news.news) {
+        if (one_new.category = 'business') {
+            each_new.push(one_new)
+        }
+
+    }
+    console.log(each_new)
+    res.render('users/business_news', { each_new })
+}
+
+module.exports.renderPolicy = async (req, res) => {
+    console.log('renderPolicy')
+    const find_news = await News.find()
+    const news = find_news[0]
+    const each_new = []
+    for (let one_new of news.news) {
+        if (one_new.category = 'policy') {
+            each_new.push(one_new)
+        }
+
+
+    }
+    console.log(each_new)
+    res.render('users/policy_news', { each_new })
+}
+
+module.exports.summarizeCoins = async (req, res) => {
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_KEY
+    });
+    const coins = await Coin.find()
+    for (i = 0; i < coins.length; i++) {
+        const prompt = `Write a short summary of the mechanics of the cryptocoin with the following tick mark: ${coins[i].name}`;
+        const gpt4Response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ "role": "user", "content": `${prompt}` }],
+            max_tokens: 1000
+        });
+        coins[i].summary = gpt4Response.choices[0].message.content
+        console.log(coins[i])
+        await coins[i].save()
+
+    }
+
+
+
+
+}
+
+module.exports.renderConsensus = async (req, res) => {
+    console.log('renderConsensus')
+    const find_news = await News.find()
+    const news = find_news[0]
+    const each_new = []
+    for (let one_new of news.news) {
+        if (one_new.includes('consensus')) {
+            each_new.push(one_new)
+        }
+
+
+    }
+
+    res.render('users/consensus_news', { each_new })
+}
+
+module.exports.renderMarkets = async (req, res) => {
+    console.log('renderMarkets')
+    const find_news = await News.find()
+    const news = find_news[0]
+    const each_new = []
+    for (let one_new of news.news) {
+        if (one_new.includes('markets')) {
+            each_new.push(one_new)
+        }
+
+
+    }
+
+    res.render('users/market_news', { each_new })
+}
 
 
 module.exports.sacarInfo = async (req, res) => {
@@ -51,12 +138,21 @@ module.exports.sacarInfo = async (req, res) => {
 
         }
 
-        const news = new News()
+        const find_news = await News.find()
+        const news = find_news[0]
         news.news_num = good_links.length
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_KEY
         });
         for (let link of good_links) {
+            const parts = link.split('/');
+            var category = ''
+            if (parts.length > 3) {
+                category = parts[3]; // Assuming the category is always the 4th element in the split array
+            }
+            const words = parts[parts.length - 2].split('-');
+            const title = words.join(' ').replace('/', '')
+            console.log(title)
             const articles = await axios.get(link)
             const $ = cheerio.load(articles.data)
             const articleText = $('p').map((i, el) => $(el).text()).get().join(' ');
@@ -70,10 +166,11 @@ module.exports.sacarInfo = async (req, res) => {
             });
 
             news.news.push({
+                category: category,
                 link: link,
-                summary: gpt4Response.choices[0].message.content
+                summary: gpt4Response.choices[0].message.content,
+                title: title
             })
-            console.log(news)
             await news.save()
         }
         res.render('home')
@@ -123,7 +220,8 @@ module.exports.renderVolume = async (req, res) => {
     const low = Math.min(...volumes)
     const summation = volumes.reduce((acc, val) => acc + val, 0)
     const average = summation / volumes.length
-    res.render('users/coin_volume', { high, low, summation, average, volumes, dates, name, names })
+    const summary = coin.summary
+    res.render('users/coin_volume', { high, summary, low, summation, average, volumes, dates, name, names })
 }
 module.exports.renderMc = async (req, res) => {
     const mcs = []
@@ -145,7 +243,8 @@ module.exports.renderMc = async (req, res) => {
     const low = Math.min(...mcs)
     const summation = mcs.reduce((acc, val) => acc + val, 0)
     const average = summation / mcs.length
-    res.render('users/coin_mc', { high, low, summation, average, mcs, dates, name, names })
+    const summary = coin.summary
+    res.render('users/coin_mc', { high, low, summary, summation, average, mcs, dates, name, names })
 }
 module.exports.renderCs = async (req, res) => {
     const css = []
@@ -167,7 +266,8 @@ module.exports.renderCs = async (req, res) => {
     const low = Math.min(...css)
     const summation = css.reduce((acc, val) => acc + val, 0)
     const average = summation / css.length
-    res.render('users/coin_cs', { high, low, average, css, dates, name, names })
+    const summary = coin.summary
+    res.render('users/coin_cs', { high, summary, low, average, css, dates, name, names })
 }
 
 module.exports.renderPlat = async (req, res) => {
@@ -385,6 +485,7 @@ module.exports.renderCoinsPrice = async (req, res) => {
 }
 
 module.exports.renderCoin = async (req, res) => {
+    console.log('renderCoin')
     const prices = []
     const dates = []
     const name = req.query.coin
@@ -404,7 +505,8 @@ module.exports.renderCoin = async (req, res) => {
     const low = Math.min(...prices)
     const summation = prices.reduce((acc, val) => acc + val, 0)
     const average = summation / prices.length
-    res.render('users/coin_price', { low, high, average, prices, dates, name, names })
+    const summary = coin.summary
+    res.render('users/coin_price', { low, high, summary, average, prices, dates, name, names })
 }
 
 // module.exports.populate_data = async (req, res) => {
