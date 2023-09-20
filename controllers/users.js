@@ -13,7 +13,7 @@ const Volume = require('../models/total_volumes')
 // const nodemailer = require('nodemailer')
 // const crypto = require('crypto')
 const XLSX = require('xlsx');
-// var workbook = XLSX.readFile("controllers\\marketintelligence_18_09_2023.xlsx")
+// var workbook = XLSX.readFile("controllers\\marketintelligence_20_09_2023.xlsx")
 const { cloudinary } = require("../cloudinary");
 const AvgMktCap = require('../models/avg_market_cap');
 const axios = require('axios')
@@ -28,13 +28,15 @@ module.exports.renderBusiness = async (req, res) => {
     const find_news = await News.find()
     const news = find_news[0]
     console.log(news)
-    const each_new = []
+    var each_new = []
     for (let one_new of news.news) {
-        if (one_new.category = 'business') {
+        if (one_new.category = 'business' && one_new.link.includes('business')) {
+            console.log(one_new.category)
             each_new.push(one_new)
         }
 
     }
+    each_new = each_new.reverse()
     console.log(each_new)
     res.render('users/business_news', { each_new })
 }
@@ -43,14 +45,15 @@ module.exports.renderPolicy = async (req, res) => {
     console.log('renderPolicy')
     const find_news = await News.find()
     const news = find_news[0]
-    const each_new = []
+    var each_new = []
     for (let one_new of news.news) {
-        if (one_new.category = 'policy') {
+        if (one_new.category = 'policy' && one_new.link.includes('policy')) {
             each_new.push(one_new)
         }
 
 
     }
+    each_new = each_new.reverse()
     console.log(each_new)
     res.render('users/policy_news', { each_new })
 }
@@ -82,15 +85,15 @@ module.exports.renderConsensus = async (req, res) => {
     console.log('renderConsensus')
     const find_news = await News.find()
     const news = find_news[0]
-    const each_new = []
+    var each_new = []
     for (let one_new of news.news) {
-        if (one_new.includes('consensus')) {
+        if (one_new.link.includes('consensus')) {
             each_new.push(one_new)
         }
 
 
     }
-
+    each_new = each_new.reverse()
     res.render('users/consensus_news', { each_new })
 }
 
@@ -98,15 +101,15 @@ module.exports.renderMarkets = async (req, res) => {
     console.log('renderMarkets')
     const find_news = await News.find()
     const news = find_news[0]
-    const each_new = []
+    var each_new = []
     for (let one_new of news.news) {
-        if (one_new.includes('markets')) {
+        if (one_new.link.includes('markets') && one_new.category == 'markets') {
             each_new.push(one_new)
         }
 
 
     }
-
+    each_new = each_new.reverse()
     res.render('users/market_news', { each_new })
 }
 
@@ -162,7 +165,7 @@ module.exports.sacarInfo = async (req, res) => {
             const gpt4Response = await openai.chat.completions.create({
                 model: "gpt-3.5-turbo",
                 messages: [{ "role": "user", "content": `${prompt}` }],
-                max_tokens: 1000
+                max_tokens: 900
             });
 
             news.news.push({
@@ -183,15 +186,21 @@ module.exports.sacarInfo = async (req, res) => {
 module.exports.renderNews = async (req, res) => {
     const all_news = await News.find()
     const news = all_news[0]
-    const links = []
-    const articles = []
+    const first_links = []
+    const first_articles = []
+    const first_titles = []
     const last_news = news.news.length - 1
     for (let i = 0; i < news.news_num; i++) {
         console.log(last_news - i)
-        links.push(news.news[last_news - i].link)
-        articles.push(news.news[last_news - i].summary)
+        first_links.push(news.news[last_news - i].link)
+        first_articles.push(news.news[last_news - i].summary)
+        first_titles.push(news.news[last_news - i].title)
     }
-    res.render('users/news', { links, articles })
+    const links = first_links.reverse()
+    const articles = first_articles.reverse()
+    const titles = first_titles.reverse()
+
+    res.render('users/news', { links, articles, titles })
 }
 
 module.exports.renderRegister = (req, res) => {

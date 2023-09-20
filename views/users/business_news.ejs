@@ -3,23 +3,26 @@
 
     <div class="container">
         <div>
-            <a href="/business_news">Business Catalog</a>
-            <a href="/policy_news">Policy Catalog</a>
-            <a href="/markets_news">Markets Catalog</a>
-            <a href="/consensus_news">Consensus Catalog</a>
+            <a href="/business_news" class="btn btn-outline-secondary btn-md mb-2 mr-4">Business Catalog</a>
+            <a href="/policy_news" class="btn btn-outline-secondary btn-md mb-2 mr-4">Policy Catalog</a>
+            <a href="/markets_news" class="btn btn-outline-secondary btn-md mb-2 mr-4">Markets Catalog</a>
+            <a href="/consensus_news" class="btn btn-outline-secondary btn-md mb-2 mr-4">Consensus Catalog</a>
         </div>
         <div class="row">
             <div class="mt-6 col-10">
 
                 <% for (let i=0; i < each_new.length; i++){ %>
                     <p>
-                        <a href="<%=each_new[i].link%>">Link to article</a>
-                    <H2>
-                        <%=each_new[i].title%>
-                    </H2>
+                        <a href="<%=each_new[i].link%>">
+                            <H2>
+                                <%=each_new[i].title%>
+                            </H2>
+                        </a>
+
                     <div>
                         <%=each_new[i].summary%>
                     </div>
+                    <br>
                     <%}%>
                         </p>
             </div>

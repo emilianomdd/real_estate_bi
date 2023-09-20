@@ -28,6 +28,7 @@ router.get('/render_intrest', users.renderIntrest)
 router.post('register_special', users.register)
 router.get('/render_news', users.renderNews)
 router.get('/render_vendor_register/:id', users.RenderVendor)
+router.get('/markets_news', users.renderMarkets)
 
 router.get('/render_stripe/:id', users.RenderStripe)
 
