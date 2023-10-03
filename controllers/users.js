@@ -13,7 +13,7 @@ const Volume = require('../models/total_volumes')
 // const nodemailer = require('nodemailer')
 // const crypto = require('crypto')
 const XLSX = require('xlsx');
-// var workbook = XLSX.readFile("controllers\\marketintelligence_20_09_2023.xlsx")
+// var workbook = XLSX.readFile("controllers\\marketintelligennce_26_09_2023.xlsx")
 const { cloudinary } = require("../cloudinary");
 const AvgMktCap = require('../models/avg_market_cap');
 const axios = require('axios')
@@ -22,6 +22,281 @@ const { JSDOM } = jsdom;
 const OpenAI = require("openai");
 const cheerio = require('cheerio')
 const News = require('../models/news')
+const fs = require('fs');
+const Papa = require('papaparse');
+
+module.exports.renderSegSum = async (req, res) => {
+    console.log('renderSegSum')
+    try {
+        const filePath = "controllers\\RESI All Fields (1).csv"
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        const results = Papa.parse(csvContent, { skipEmptyLines: true });
+
+        const headers = results.meta.fields;
+        const closing_data = [];
+        var zips = [];
+
+        results.data.forEach((row, index) => {
+            if (index === 0) return;
+            data = {
+                closing_date: row[53],
+                postal_code: row[250],
+                closing_price: row[54]
+            }
+            zips.push(row[250])
+            closing_data.push(data)
+        });
+        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+        let closingDates = closing_data.map(property => new Date(property.closing_date));
+
+        let startDate = closingDates[0];
+        let endDate = closingDates[closingDates.length - 1];
+
+        let segments = [];
+        let sums = [];
+
+        while (startDate <= endDate) {
+            let segmentEnd = new Date(startDate);
+            segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+            let sum = closing_data
+                .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
+                .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
+
+            segments.push(startDate);
+            sums.push(sum);
+
+            startDate = segmentEnd;
+        }
+
+        console.log("Segments:", segments);
+        console.log("Sums:", sums);
+        zips = [...new Set(zips)];
+        const name = 'Segment Sum';
+        res.render('users/render_sum', { segments, sums, name, zips });
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+module.exports.renderZipPrices = async (req, res) => {
+    console.log('renderZipPrices')
+    try {
+        const filePath = "controllers\\RESI All Fields (1).csv"
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        // Parse the CSV content with headers
+        const results = Papa.parse(csvContent, { skipEmptyLines: true });
+        const reqd_zips = req.query.zip
+        // Get column names (headers)
+        const headers = results.meta.fields;
+        const closing_data = []
+        var zips = []
+        // Iterate through each row and print
+        results.data.forEach((row, index) => {
+            if (index === 0) return;
+            if (reqd_zips.includes(row[250])) {
+                let existingEntry = closing_data.find(entry => entry.closing_date === row[53]);
+                if (existingEntry) {
+                    existingEntry.closing_price += parseFloat(row[54]);
+                } else {
+                    let data = {
+                        closing_date: row[53],
+                        postal_code: row[250],
+                        closing_price: parseFloat(row[54])
+                    }
+
+                    closing_data.push(data);
+                }
+            } else {
+                let data = {
+                    closing_date: row[53],
+                    closing_price: 0
+                }
+                closing_data.push(data);
+            }
+            zips.push(row[250])
+        });
+        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+        const closing_date = []
+        const closing_price = []
+        closing_data.forEach(property => {
+            closing_price.push(property.closing_price);
+            closing_date.push(property.closing_date);
+        });
+        console.log(closing_data)
+        console.log(closing_price)
+        console.log(closing_date)
+        zips = [...new Set(zips)]
+        const name = `Total sales volume of homes 1M+  in the following zip codes: ${reqd_zips}`
+        res.render('users/dates_prices', { closing_date, closing_price, name, zips })
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+module.exports.printCSV = async (req, res) => {
+    console.log('printCSV')
+    try {
+        const filePath = "controllers\\RESI All Fields (1).csv"
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        // Parse the CSV content with headers
+        const results = Papa.parse(csvContent, { skipEmptyLines: true });
+
+        // Get column names (headers)
+        const headers = results.meta.fields;
+        const closing_data = []
+        var zips = []
+        // Iterate through each row and print
+        results.data.forEach((row, index) => {
+            if (index === 0) return;
+            let existingEntry = closing_data.find(entry => entry.closing_date === row[53]);
+            if (existingEntry) {
+                existingEntry.closing_price += parseFloat(row[54]);
+            } else {
+                let data = {
+                    closing_date: row[53],
+                    postal_code: row[250],
+                    closing_price: parseFloat(row[54])
+                }
+                zips.push(row[250])
+                closing_data.push(data);
+            }
+        });
+        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+        const closing_date = []
+        const closing_price = []
+        closing_data.forEach(property => {
+            closing_price.push(property.closing_price);
+            closing_date.push(property.closing_date);
+        });
+        zips = [...new Set(zips)]
+        const name = 'Total Daily Sales Volume of Homes 1M+'
+        res.render('users/dates_prices', { closing_date, closing_price, name, zips })
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+module.exports.renderCount = async (req, res) => {
+    console.log('renderCount')
+    try {
+        const filePath = "controllers\\RESI All Fields (1).csv"
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        // Parse the CSV content with headers
+        const results = Papa.parse(csvContent, { skipEmptyLines: true });
+
+        // Get column names (headers)
+        const headers = results.meta.fields;
+        const closing_data = []
+        var zips = []
+        // Iterate through each row and print
+        results.data.forEach((row, index) => {
+
+            if (index === 0) return;
+            data = {
+                closing_date: row[53],
+                postal_code: row[250],
+                closing_price: row[54]
+            }
+            zips.push(row[250])
+            closing_data.push(data)
+        });
+        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+        let closingDates = closing_data.map(property => new Date(property.closing_date));
+
+        let startDate = closingDates[0];
+        let endDate = closingDates[closingDates.length - 1];
+
+        let segments = []; // This will store the start date of each 15-day segment
+        let counts = [];   // This will store the number of homes closed in each segment
+
+        while (startDate <= endDate) {
+            // Define the end of the current 15-day segment
+            let segmentEnd = new Date(startDate);
+            segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+            // Count the number of properties closed within the current segment
+            let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
+
+            segments.push(startDate);
+            counts.push(count);
+
+            // Move to the next segment
+            startDate = segmentEnd;
+        }
+
+        console.log("Segments:", segments);
+        console.log("Counts:", counts);
+        zips = [...new Set(zips)]
+        const name = 'Segment Count'
+        res.render('users/render_count', { segments, counts, name, zips })
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+module.exports.renderZipCount = async (req, res) => {
+    console.log('renderZipCount')
+    try {
+        const filePath = "controllers\\RESI All Fields (1).csv"
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        // Parse the CSV content with headers
+        const results = Papa.parse(csvContent, { skipEmptyLines: true });
+
+        // Get column names (headers)
+        const headers = results.meta.fields;
+        const closing_data = []
+        var zips = []
+        const reqd_zips = req.query.zip
+        // Iterate through each row and print
+        results.data.forEach((row, index) => {
+
+            if (index === 0) return;
+            if (reqd_zips.includes(row[250])) {
+                let data = {
+                    closing_date: row[53],
+                    postal_code: row[250],
+                    closing_price: row[54]
+                }
+
+                closing_data.push(data)
+            }
+            zips.push(row[250])
+        });
+        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+        let closingDates = closing_data.map(property => new Date(property.closing_date));
+
+        let startDate = closingDates[0];
+        let endDate = closingDates[closingDates.length - 1];
+
+        let segments = []; // This will store the start date of each 15-day segment
+        let counts = [];   // This will store the number of homes closed in each segment
+
+        while (startDate <= endDate) {
+            // Define the end of the current 15-day segment
+            let segmentEnd = new Date(startDate);
+            segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+            // Count the number of properties closed within the current segment
+            let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
+
+            segments.push(startDate);
+            counts.push(count);
+
+            // Move to the next segment
+            startDate = segmentEnd;
+        }
+
+        console.log("Segments:", segments);
+        console.log("Counts:", counts);
+        zips = [...new Set(zips)]
+        const name = `Segment Count of ${reqd_zips}`
+        res.render('users/render_count', { segments, counts, name, zips })
+    } catch (e) {
+        console.log(e)
+    }
+}
+
 
 module.exports.renderBusiness = async (req, res) => {
     console.log('renderBusiness')
@@ -113,6 +388,53 @@ module.exports.renderMarkets = async (req, res) => {
     res.render('users/market_news', { each_new })
 }
 
+module.exports.sacarDatos = async (req, res) => {
+    try {
+        // Make an HTTP request to the URL
+        const response = await axios.get('https://coinmarketcap.com/rankings/exchanges/derivatives/');
+
+        // Load the HTML content into Cheerio
+        const $ = cheerio.load(response.data);
+
+        // Define an array to store the table data
+        const tableData = [];
+
+        // Loop through each row of the table
+        $('table tbody tr').each((index, row) => {
+            const rowData = {};
+
+            // Extract data from each cell in the row
+            $(row).find('td').each((cellIndex, cell) => {
+                console.log($(cell).text())
+                switch (cellIndex) {
+                    case 1: // Exchange Name
+                        rowData.exchangeName = $(cell).find('.sc-1eb5slv-0 iQKAlx').text().trim();
+                        break;
+                    case 2: // Trading Volume
+                        rowData.tradingVolume = $(cell).text().trim();
+                        break;
+                    case 3: // Open Interest
+                        rowData.openInterest = $(cell).text().trim();
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            // Push the row data to the tableData array
+            tableData.push(rowData);
+        });
+
+        console.log(tableData)
+
+    } catch (error) {
+        console.error('Error fetching table data:', error);
+        return null;
+    }
+}
+
+
+
 
 module.exports.sacarInfo = async (req, res) => {
 
@@ -144,6 +466,16 @@ module.exports.sacarInfo = async (req, res) => {
         const find_news = await News.find()
         const news = find_news[0]
         news.news_num = good_links.length
+        var titles = []
+        for (let each_new of news.news) {
+            if (each_new.title !== 'undefined' && each_new.title !== '') {
+                titles.push(each_new.title)
+            }
+
+
+        }
+
+        console.log(titles)
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_KEY
         });
@@ -156,25 +488,28 @@ module.exports.sacarInfo = async (req, res) => {
             const words = parts[parts.length - 2].split('-');
             const title = words.join(' ').replace('/', '')
             console.log(title)
+
             const articles = await axios.get(link)
             const $ = cheerio.load(articles.data)
             const articleText = $('p').map((i, el) => $(el).text()).get().join(' ');
+            if (!titles.includes(title)) {
+                // Use GPT - 4 to summarize
+                const prompt = `Please summarize the following article: ${articleText}`;
+                const gpt4Response = await openai.chat.completions.create({
+                    model: "gpt-3.5-turbo",
+                    messages: [{ "role": "user", "content": `${prompt}` }],
+                    max_tokens: 900
+                });
 
-            // Use GPT-4 to summarize
-            const prompt = `Please summarize the following article: ${articleText}`;
-            const gpt4Response = await openai.chat.completions.create({
-                model: "gpt-3.5-turbo",
-                messages: [{ "role": "user", "content": `${prompt}` }],
-                max_tokens: 900
-            });
+                news.news.push({
+                    category: category,
+                    link: link,
+                    summary: gpt4Response.choices[0].message.content,
+                    title: title
+                })
+                await news.save()
+            }
 
-            news.news.push({
-                category: category,
-                link: link,
-                summary: gpt4Response.choices[0].message.content,
-                title: title
-            })
-            await news.save()
         }
         res.render('home')
     } catch (e) {
@@ -518,244 +853,244 @@ module.exports.renderCoin = async (req, res) => {
     res.render('users/coin_price', { low, high, summary, average, prices, dates, name, names })
 }
 
-// module.exports.populate_data = async (req, res) => {
-//     console.log('populate_data')
+module.exports.populate_data = async (req, res) => {
+    console.log('populate_data')
 
-//     var currentDate = new Date();
-//     var formattedDate = (currentDate.getMonth() + 1) + '/' + (currentDate.getDate()) + '/' + currentDate.getFullYear();
-//     console.log(formattedDate)
-//     let worksheet_coins = workbook.Sheets['By_Coin']
-//     let worksheet_spot = workbook.Sheets['Spot']
-//     let worksheet_derivatives = workbook.Sheets['Derivatives']
-//     const ids = []
-//     var index = 2
+    var currentDate = new Date();
+    var formattedDate = (currentDate.getMonth() + 1) + '/' + (currentDate.getDate()) + '/' + currentDate.getFullYear();
+    console.log(formattedDate)
+    let worksheet_coins = workbook.Sheets['By_Coin']
+    let worksheet_spot = workbook.Sheets['Spot']
+    let worksheet_derivatives = workbook.Sheets['Derivatives']
+    const ids = []
+    var index = 2
 
-//     while (worksheet_coins['B' + index]) {
-//         try {
-//             const str = worksheet_coins[`B${index}`].w
-//             const name = str.slice(0, str.indexOf(' '));
-//             const check_name = await Coin.findOne({ name: name })
-//             if (!check_name) {
-//                 const coin = new Coin()
-//                 coin.name = name
-//                 const price = worksheet_coins[`C${index}`].v
-//                 coin.price.push({ date: formattedDate, price: price })
-//                 const mkt_cp = worksheet_coins[`G${index}`].v
-//                 coin.market_cap.push({ date: formattedDate, market_cap: mkt_cp })
-//                 const vol = worksheet_coins[`H${index}`].h
-//                 const final_vol = Number(vol.replace(/[^0-9.]/g, ''))
-//                 coin.volume.push({ date: formattedDate, volume: final_vol })
-//                 const circ_sup = worksheet_coins[`I${index}`].h
-//                 const final_circ_sup = Number(circ_sup.replace(/[^0-9.]/g, ''))
-//                 coin.circulating_supply.push({ date: formattedDate, circulating_supply: final_circ_sup })
+    while (worksheet_coins['B' + index]) {
+        try {
+            const str = worksheet_coins[`B${index}`].w
+            const name = str.slice(0, str.indexOf(' '));
+            const check_name = await Coin.findOne({ name: name })
+            if (!check_name) {
+                const coin = new Coin()
+                coin.name = name
+                const price = worksheet_coins[`C${index}`].v
+                coin.price.push({ date: formattedDate, price: price })
+                const mkt_cp = worksheet_coins[`G${index}`].v
+                coin.market_cap.push({ date: formattedDate, market_cap: mkt_cp })
+                const vol = worksheet_coins[`H${index}`].h
+                const final_vol = Number(vol.replace(/[^0-9.]/g, ''))
+                coin.volume.push({ date: formattedDate, volume: final_vol })
+                const circ_sup = worksheet_coins[`I${index}`].h
+                const final_circ_sup = Number(circ_sup.replace(/[^0-9.]/g, ''))
+                coin.circulating_supply.push({ date: formattedDate, circulating_supply: final_circ_sup })
 
-//                 await coin.save()
+                await coin.save()
 
-//                 ids.push(coin.id)
-//             }
-//             else {
-//                 const price = worksheet_coins[`C${index}`].v
-//                 check_name.price.push({ date: formattedDate, price: price })
-//                 const mkt_cp = worksheet_coins[`G${index}`].v
-//                 check_name.market_cap.push({ date: formattedDate, market_cap: mkt_cp })
-//                 const vol = worksheet_coins[`H${index}`].h
-//                 const final_vol = Number(vol.replace(/[^0-9.]/g, ''))
-//                 check_name.volume.push({ date: formattedDate, volume: final_vol })
-//                 const circ_sup = worksheet_coins[`I${index}`].h
-//                 const final_circ_sup = Number(circ_sup.replace(/[^0-9.]/g, ''))
-//                 check_name.circulating_supply.push({ date: formattedDate, circulating_supply: final_circ_sup })
+                ids.push(coin.id)
+            }
+            else {
+                const price = worksheet_coins[`C${index}`].v
+                check_name.price.push({ date: formattedDate, price: price })
+                const mkt_cp = worksheet_coins[`G${index}`].v
+                check_name.market_cap.push({ date: formattedDate, market_cap: mkt_cp })
+                const vol = worksheet_coins[`H${index}`].h
+                const final_vol = Number(vol.replace(/[^0-9.]/g, ''))
+                check_name.volume.push({ date: formattedDate, volume: final_vol })
+                const circ_sup = worksheet_coins[`I${index}`].h
+                const final_circ_sup = Number(circ_sup.replace(/[^0-9.]/g, ''))
+                check_name.circulating_supply.push({ date: formattedDate, circulating_supply: final_circ_sup })
 
-//                 await check_name.save()
+                await check_name.save()
 
-//                 ids.push(check_name.id)
-//             }
-//             index++
-//         } catch (e) {
-//             console.log(e)
-//             index++
-//             continue
-//         }
+                ids.push(check_name.id)
+            }
+            index++
+        } catch (e) {
+            console.log(e)
+            index++
+            continue
+        }
 
-//     }
-
-
-
-//     index = 2
-//     var ids_spot = []
-//     while (worksheet_spot['B' + index]) {
-//         try {
-//             const name = worksheet_spot[`B${index}`].v.replace("logo ", "")
-//             const check_plat = await Platform.findOne({ name: name })
-
-//             if (!check_plat) {
-//                 const platform = new Platform()
-//                 const spot = { volume: 0, weekly_visits: 0, date: formattedDate }
-//                 platform.name = name
-//                 const trading_vol = worksheet_spot[`D${index}`].v
-//                 spot.volume = trading_vol
-//                 const weekly_visits = worksheet_spot[`F${index}`].v
-//                 spot.weekly_visits = weekly_visits
-//                 platform.spot.push(spot)
-//                 await platform.save()
-//                 ids_spot.push(platform.id)
-//             } else {
-//                 const spot = { volume: 0, weekly_visits: 0, date: formattedDate }
-//                 const trading_vol = worksheet_spot[`D${index}`].v
-//                 spot.volume = trading_vol
-//                 const weekly_visits = worksheet_spot[`F${index}`].v
-//                 spot.weekly_visits = weekly_visits
-//                 check_plat.spot.push(spot)
-//                 await check_plat.save()
-//                 ids_spot.push(check_plat.id)
-//             }
-
-//             index++
-//         } catch (e) {
-//             index++
-//             continue
-//         }
-//     }
-
-//     var ids_derivatives = []
-//     index = 2
-//     var total_der = 0
-//     var total_intrest = 0
-//     while (worksheet_derivatives['B' + index]) {
-//         try {
-//             const name = worksheet_derivatives[`B${index}`].v.replace("logo ", "")
-//             const check_plat = await Platform.findOne({ name: name })
-//             if (!check_plat) {
-//                 const platform = new Platform()
-//                 const derivative = { volume: 0, open_intrest: 0, date: formattedDate }
-//                 platform.name = name
-//                 const trading_vol = worksheet_derivatives[`C${index}`].v
-//                 derivative.volume = trading_vol
-//                 var open_intrest = worksheet_derivatives[`F${index}`].v
-//                 if (open_intrest == '--') {
-//                     open_intrest = 0
-//                 }
-//                 derivative.open_intrest = open_intrest
-//                 platform.derivative.push(derivative)
-//                 await platform.save()
-//                 total_der += platform.derivative[platform.derivative.length - 1].volume
-//                 total_intrest += platform.derivative[platform.derivative.length - 1].open_intrest
-
-//                 ids_derivatives.push(platform.id)
-//             } else {
-//                 const derivative = { volume: 0, open_intrest: 0, date: formattedDate }
-//                 const trading_vol = worksheet_derivatives[`C${index}`].v
-//                 derivative.volume = trading_vol
-//                 var open_intrest = worksheet_derivatives[`F${index}`].v
-//                 if (open_intrest == '--') {
-//                     open_intrest = 0
-//                 }
-//                 derivative.open_intrest = open_intrest
-//                 check_plat.derivative.push(derivative)
-//                 await check_plat.save()
-
-//                 total_der += check_plat.derivative[check_plat.derivative.length - 1].volume
-//                 total_intrest += check_plat.derivative[check_plat.derivative.length - 1].open_intrest
-
-//                 ids_derivatives.push(check_plat.id)
-//             }
-
-//             index++
-//         } catch (e) {
-//             console.log(e)
-//             index++
-//             continue
-//         }
-//     }
-//     let sumMarketCap = 0;
-//     let sumCoinPrice = 0;
-//     for (let i = 0; i < ids.length; i++) {
-
-//         const coin = await Coin.findById(ids[i])
-//         try {
-//             if (coin.market_cap[coin.market_cap.length - 1].market_cap > 0) {
-//                 sumMarketCap += coin.market_cap[coin.market_cap.length - 1].market_cap;
-//             } if (coin.price[coin.price.length - 1].price > 0) {
-//                 sumCoinPrice += coin.price[coin.price.length - 1].price;
-//             } else { continue }
-//         } catch (e) {
-//             console.log(e)
-//             continue
-//         }
-//     }
-
-//     const averageMarketCap = sumMarketCap / ids.length;
-//     const averageCoinPrice = sumCoinPrice / ids.length;
-
-//     const mkcp = await AvgMktCap.find()
-//     const average_mkcp = mkcp[0]
-//     // const average_mkcp = new AvgMktCap()
-//     const prices = await AvgCoinPrice.find()
-//     const average_price = prices[0]
-//     // const average_price = new AvgCoinPrice()
-//     average_mkcp.avg_market_cap.push({ date: formattedDate, Price: averageMarketCap })
-//     await average_mkcp.save()
-//     average_price.avg_price.push({ date: formattedDate, Price: averageCoinPrice })
-//     await average_price.save()
-
-//     var sumSpotVol = 0
-//     var sumSpotWeekly = 0
-//     for (let i = 0; i < ids_spot.length; i++) {
-//         const platform = await Platform.findById(ids_spot[i])
-//         try {
-//             if (platform.spot[platform.spot.length - 1].volume > 0) {
-//                 sumSpotVol += platform.spot[platform.spot.length - 1].volume;
-//             } else { continue }
-//         }
-//         catch (e) {
-//             continue
-//         }
-//         try {
-//             if (platform.spot[platform.spot.length - 1].weekly_visits > 0) {
-//                 sumSpotWeekly += platform.spot[platform.spot.length - 1].weekly_visits
-//             } else { continue }
-//         } catch (e) {
-//             continue
-//         }
-//     }
-//     var sumDerVol = 0
-//     var opIntrest = 0
-//     for (let i = 0; i < ids_derivatives.length; i++) {
-//         const platform = await Platform.findById(ids_derivatives[i])
-//         try {
-//             sumDerVol += platform.derivative[platform.derivative.length - 1].volume;
-
-//         } catch (e) {
-//             console.log(e)
-//             continue
-//         }
-//         try {
-
-//             opIntrest += platform.derivative[platform.derivative.length - 1].open_intrest
-
-//         } catch (e) {
-//             console.log(e)
-//             continue
-//         }
-//     }
-//     const spot = {
-//         date: formattedDate,
-//         volume: sumSpotVol,
-//         weekly_visits: sumSpotWeekly
-//     }
-//     const derivative = {
-//         date: formattedDate,
-//         volume: sumDerVol,
-//         open_intrest: opIntrest
-//     }
-//     const volumes = await Volume.find()
-//     // const volume = new Volume()
-//     const volume = volumes[0]
-//     volume.spot.push(spot)
-//     volume.derivative.push(derivative)
-//     await volume.save()
+    }
 
 
-// }
+
+    index = 2
+    var ids_spot = []
+    while (worksheet_spot['B' + index]) {
+        try {
+            const name = worksheet_spot[`B${index}`].v.replace("logo ", "")
+            const check_plat = await Platform.findOne({ name: name })
+
+            if (!check_plat) {
+                const platform = new Platform()
+                const spot = { volume: 0, weekly_visits: 0, date: formattedDate }
+                platform.name = name
+                const trading_vol = worksheet_spot[`D${index}`].v
+                spot.volume = trading_vol
+                const weekly_visits = worksheet_spot[`F${index}`].v
+                spot.weekly_visits = weekly_visits
+                platform.spot.push(spot)
+                await platform.save()
+                ids_spot.push(platform.id)
+            } else {
+                const spot = { volume: 0, weekly_visits: 0, date: formattedDate }
+                const trading_vol = worksheet_spot[`D${index}`].v
+                spot.volume = trading_vol
+                const weekly_visits = worksheet_spot[`F${index}`].v
+                spot.weekly_visits = weekly_visits
+                check_plat.spot.push(spot)
+                await check_plat.save()
+                ids_spot.push(check_plat.id)
+            }
+
+            index++
+        } catch (e) {
+            index++
+            continue
+        }
+    }
+
+    var ids_derivatives = []
+    index = 2
+    var total_der = 0
+    var total_intrest = 0
+    while (worksheet_derivatives['B' + index]) {
+        try {
+            const name = worksheet_derivatives[`B${index}`].v.replace("logo ", "")
+            const check_plat = await Platform.findOne({ name: name })
+            if (!check_plat) {
+                const platform = new Platform()
+                const derivative = { volume: 0, open_intrest: 0, date: formattedDate }
+                platform.name = name
+                const trading_vol = worksheet_derivatives[`C${index}`].v
+                derivative.volume = trading_vol
+                var open_intrest = worksheet_derivatives[`F${index}`].v
+                if (open_intrest == '--') {
+                    open_intrest = 0
+                }
+                derivative.open_intrest = open_intrest
+                platform.derivative.push(derivative)
+                await platform.save()
+                total_der += platform.derivative[platform.derivative.length - 1].volume
+                total_intrest += platform.derivative[platform.derivative.length - 1].open_intrest
+
+                ids_derivatives.push(platform.id)
+            } else {
+                const derivative = { volume: 0, open_intrest: 0, date: formattedDate }
+                const trading_vol = worksheet_derivatives[`C${index}`].v
+                derivative.volume = trading_vol
+                var open_intrest = worksheet_derivatives[`F${index}`].v
+                if (open_intrest == '--') {
+                    open_intrest = 0
+                }
+                derivative.open_intrest = open_intrest
+                check_plat.derivative.push(derivative)
+                await check_plat.save()
+
+                total_der += check_plat.derivative[check_plat.derivative.length - 1].volume
+                total_intrest += check_plat.derivative[check_plat.derivative.length - 1].open_intrest
+
+                ids_derivatives.push(check_plat.id)
+            }
+
+            index++
+        } catch (e) {
+            console.log(e)
+            index++
+            continue
+        }
+    }
+    let sumMarketCap = 0;
+    let sumCoinPrice = 0;
+    for (let i = 0; i < ids.length; i++) {
+
+        const coin = await Coin.findById(ids[i])
+        try {
+            if (coin.market_cap[coin.market_cap.length - 1].market_cap > 0) {
+                sumMarketCap += coin.market_cap[coin.market_cap.length - 1].market_cap;
+            } if (coin.price[coin.price.length - 1].price > 0) {
+                sumCoinPrice += coin.price[coin.price.length - 1].price;
+            } else { continue }
+        } catch (e) {
+            console.log(e)
+            continue
+        }
+    }
+
+    const averageMarketCap = sumMarketCap / ids.length;
+    const averageCoinPrice = sumCoinPrice / ids.length;
+
+    const mkcp = await AvgMktCap.find()
+    const average_mkcp = mkcp[0]
+    // const average_mkcp = new AvgMktCap()
+    const prices = await AvgCoinPrice.find()
+    const average_price = prices[0]
+    // const average_price = new AvgCoinPrice()
+    average_mkcp.avg_market_cap.push({ date: formattedDate, Price: averageMarketCap })
+    await average_mkcp.save()
+    average_price.avg_price.push({ date: formattedDate, Price: averageCoinPrice })
+    await average_price.save()
+
+    var sumSpotVol = 0
+    var sumSpotWeekly = 0
+    for (let i = 0; i < ids_spot.length; i++) {
+        const platform = await Platform.findById(ids_spot[i])
+        try {
+            if (platform.spot[platform.spot.length - 1].volume > 0) {
+                sumSpotVol += platform.spot[platform.spot.length - 1].volume;
+            } else { continue }
+        }
+        catch (e) {
+            continue
+        }
+        try {
+            if (platform.spot[platform.spot.length - 1].weekly_visits > 0) {
+                sumSpotWeekly += platform.spot[platform.spot.length - 1].weekly_visits
+            } else { continue }
+        } catch (e) {
+            continue
+        }
+    }
+    var sumDerVol = 0
+    var opIntrest = 0
+    for (let i = 0; i < ids_derivatives.length; i++) {
+        const platform = await Platform.findById(ids_derivatives[i])
+        try {
+            sumDerVol += platform.derivative[platform.derivative.length - 1].volume;
+
+        } catch (e) {
+            console.log(e)
+            continue
+        }
+        try {
+
+            opIntrest += platform.derivative[platform.derivative.length - 1].open_intrest
+
+        } catch (e) {
+            console.log(e)
+            continue
+        }
+    }
+    const spot = {
+        date: formattedDate,
+        volume: sumSpotVol,
+        weekly_visits: sumSpotWeekly
+    }
+    const derivative = {
+        date: formattedDate,
+        volume: sumDerVol,
+        open_intrest: opIntrest
+    }
+    const volumes = await Volume.find()
+    // const volume = new Volume()
+    const volume = volumes[0]
+    volume.spot.push(spot)
+    volume.derivative.push(derivative)
+    await volume.save()
+
+
+}
 module.exports.register = async (req, res, next) => {
     try {
         const { email, username, password, phone, countryCode } = body;
