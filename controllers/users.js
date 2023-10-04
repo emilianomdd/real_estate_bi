@@ -377,8 +377,8 @@ module.exports.renderZipCount = async (req, res) => {
 
         console.log('preRows')
         const rows = await collection.find().toArray();
-        console.log(rows)
         const reqd_zips = req.query.zip
+        console.log(reqd_zips)
         if (rows.length) {
             const closing_data = [];
             var zips = [];
@@ -394,6 +394,12 @@ module.exports.renderZipCount = async (req, res) => {
                     }
 
                     closing_data.push(data)
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        closing_price: 0
+                    }
+                    closing_data.push(data);
                 }
                 if (!zips.includes(row['Postal Code'])) {
                     zips.push(row['Postal Code']);
