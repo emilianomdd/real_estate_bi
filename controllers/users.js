@@ -7,7 +7,6 @@ const authToken = process.env.TW_AUTH;
 const Coin = require('../models/coin')
 const avg_mkt_cap = require('../models/avg_market_cap')
 const AvgCoinPrice = require('../models/avg_coin_price')
-const client = require('twilio')(accountSid, authToken);
 const Platform = require('../models/platform')
 const Volume = require('../models/total_volumes')
 // const async = require("async")
@@ -26,108 +25,84 @@ const News = require('../models/news')
 const fs = require('fs');
 const Papa = require('papaparse');
 const { google } = require('googleapis')
+const { MongoClient } = require('mongodb');
+const session = require('express-session');
+const MongoDBStore = require("connect-mongo")(session);
+const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp';
+const client = new MongoClient(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
 
 module.exports.zipSegSum = async (req, res) => {
     console.log('zipSegSum');
 
+    await client.connect();
+    // Select the database
+    const db = client.db('Real_Estate');
+
+    // Select the collection
+    const collection = db.collection('BI');
+    console.log(collection)
+    // Perform a query 
+
     try {
-        const key = {
-            type: "service_account",
-            project_id: "i-hexagon-401015",
-            private_key_id: "fe4ccc5243c80d2276d776e3a624011343679fce",
-            private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDO6LRlG3fg6FG7\n6Rj2JXHdiIqlIJK8ZLl5Z29Ddytl9GWOmq4ysftHhekreLT/DB+6s1TEdnjMp2zI\nsJWxUiOnvhR7HjEbA+gLBMs9T/spXv1KTtPDttieYYpHLGCsf18Xldp+JLtmHcyt\nZBQcZYH7qfPwfcYNwjiIGYYcHmkTMEWbsNAnK5pwgrYpkmoHa7ktqSWy4cNtcZrG\nMZy/IPVWtfNITkqSaYDoK/bDI4lbQ1cDANRcuQX+QE9xU9Hy2wqzPDq4PTUv1HYh\nj8EaM8bHIRKeuH3nJN19QmW6zu6NYyDjaBQKTmg74tLW9mZQQ9Oj/bgEXlpGsbe/\nRu6QZCvRAgMBAAECggEAXW0Fx4GXp54/CbI+6yYNPBKjR9xlZVu1w/PIcZYlqmuo\nT7PYZFupMqpsloxybZdz3EGNTQiRkxcmL5hMfzyvjNZvOQhw89nXtOH9QzoSFqQl\nip/9TqoJNbqlTW3kWP9KWMP5XGwJkhpyiPhffFL5VkFvPHAONbg0/n9H5vp0R4z8\ndvJg3cn+TQ38QdqbJ392dFHyEWcCbNQYXGlb4Ujsr3+TTdoH2u2ri00rrm3oESh0\nMMd38zdc3Fbs/NarwhJTaRrurhUxL0YFIIRSg3auqEKIESDVQWNuJVS44ZusB6bI\nQx4DhGdICH2sdK4L5gbhV0raycKWFRPQV8Zg/y0VYQKBgQDsVM93fYDJKHWgs6H/\n1YRGpeLd2bV8/nORxHbx+EXhjrvNWi2/RNedhIyJEHauK1nrmLMorjL2rIY2yrs5\nqJFJLOc9PUpmTmZ/r+VFA75H4ARdC3yaETnho8EVnQuJeDelsgP/dr1pgH1QY3Xf\no2yEVQy/xR7G9/LKlpiebVomPwKBgQDgIQiWvaTC00Kjry8S59Q5rY7/W9QAgBl3\nQCPKluwetlyJnJ+Pe1ZzreBsa8rnyoSJlEfriZKV9z1Nj+72D3pclwaCoKIeOTEo\n+no4eTVSV5CPeqhIlUWUuSkE5teOBmd8NvFGuzLDxNQhVQdoQfXESRduagqh+4qg\npzQ5QA3J7wKBgAPgZELOgTVLf5pyN98Nbo0GHZGMB6kUN2sVsOnJK8RGZhg5OXTg\nuTSxPujkpz22IlR1/cJWESnwrIbrjmSkujVcEjLz9Wt2L8I6bWVTaWSebRPlo1aX\nn75uxDUJjW3k1ezW3a/sD7FSVTvjVcSkVpxZFMt0fUvAN3BRRhGbM5ZbAoGAYRAt\nRgrvNaiELZsKied4U1pEmXZNQ8I2RRyz42Kk81AKl1YLC/pgIEzm6k1sXCGqcGKV\nGv5DS0r9c3+n/0wIs9x750plqy0dix+emqJzYyuk4V4/Tt/GeHgPuZ23MDy5yGOK\n7hTYEUxGigDm6lHWe6Ej0p9951SmXpjK1xhUYGUCgYEAjIiJpfTfz7IdKvDD2wi2\nhm4iCP45kadDmBdrK9fGrxkR/Gy1YDcvn5BSyp3ijJeSIjtslubWdyC95h1RDIeC\nK9cwwEreQOLYbbF0vo+TIemeQLPQsSbvd6zZTTbbPKZCJPtVU599xLlb6U41zuQo\n/aeNpKEYM/rVBdajN6xPzL4=\n-----END PRIVATE KEY-----\n",
-            client_email: "emiliano@i-hexagon-401015.iam.gserviceaccount.com",
-            client_id: "108014910557901794407",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/emiliano%40i-hexagon-401015.iam.gserviceaccount.com",
-            universe_domain: "googleapis.com"
-        };
 
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            null,
-            key.private_key,
-            ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            null
-        );
+        console.log('preRows')
+        const rows = await collection.find().toArray();
+        console.log(rows)
+        const reqd_zips = req.query.zip
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
 
-        google.options({ auth: jwtClient });
+            rows.forEach((row, index) => {
+                if (index === 0) return;
 
-        const spreadsheetId = '1IDFjA-LTE12IAIAZ7JU-ElM6SvjGBs4exSEmCyLbmQg';
-        const range = 'Sheet1';
-        const sheets = google.sheets('v4');
-        sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        },
-            (err, response) => {
-                try {  // Added try block here
-                    if (err) {
-                        console.log('The API returned an error: ' + err);
-                        return;
+                if (reqd_zips.includes(row['Postal Code'])) {
+                    data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: row['Close Price']
                     }
-
-                    const reqd_zips = req.query.zip
-
-                    const rows = response.data.values;
-                    if (rows.length) {
-                        const closing_data = [];
-                        var zips = [];
-
-                        rows.forEach((row, index) => {
-                            if (index === 0) return;
-
-                            if (reqd_zips.includes(row[250])) {
-                                data = {
-                                    closing_date: row[53],
-                                    postal_code: row[250],
-                                    closing_price: row[54]
-                                }
-                                closing_data.push(data);
-                            } else {
-                                data = {
-                                    closing_date: row[53],
-                                    closing_price: 0
-                                }
-                            }
-                            zips.push(row[250]);
-                        });
-
-                        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
-                        let closingDates = closing_data.map(property => new Date(property.closing_date));
-
-                        let startDate = closingDates[0];
-                        let endDate = closingDates[closingDates.length - 1];
-
-                        let segments = [];
-                        let sums = [];
-
-                        while (startDate <= endDate) {
-                            let segmentEnd = new Date(startDate);
-                            segmentEnd.setDate(segmentEnd.getDate() + 15);
-
-                            let sum = closing_data
-                                .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
-                                .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
-
-                            segments.push(startDate);
-                            sums.push(sum);
-
-                            startDate = segmentEnd;
-                        }
-
-                        console.log("Segments:", segments);
-                        console.log("Sums:", sums);
-                        zips = [...new Set(zips)];
-                        const name = `Value Summation of Homes Sold Every 15 Days in: ${reqd_zips}`;
-                        res.render('users/render_sum', { segments, sums, name, zips });
+                    closing_data.push(data);
+                } else {
+                    data = {
+                        closing_date: row['Close Date'],
+                        closing_price: 0
                     }
-                } catch (e) {
-                    console.log(e); // Handle error during the API response processing
+                }
+                if (!zips.includes(row['Postal Code'])) {
+                    zips.push(row['Postal Code']);
                 }
             });
+
+            closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            let closingDates = closing_data.map(property => new Date(property.closing_date));
+
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+
+            let segments = [];
+            let sums = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+                let sum = closing_data
+                    .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
+                    .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
+
+                segments.push(startDate);
+                sums.push(sum);
+
+                startDate = segmentEnd;
+            }
+
+            console.log("Segments:", segments);
+            console.log("Sums:", sums);
+            const name = `Value Summation of Homes Sold Every 15 Days in: ${reqd_zips}`;
+            res.render('users/render_sum', { segments, sums, name, zips });
+        }
+
 
     } catch (e) {
         console.log(e); // Handle error during JWT client creation and API call
@@ -137,265 +112,187 @@ module.exports.zipSegSum = async (req, res) => {
 
 module.exports.renderSegSum = async (req, res) => {
     console.log('renderSegSum');
+    await client.connect();
+    // Select the database
+    const db = client.db('Real_Estate');
+
+    // Select the collection
+    const collection = db.collection('BI');
+    console.log(collection)
+    // Perform a query 
 
     try {
-        const key = {
-            type: "service_account",
-            project_id: "i-hexagon-401015",
-            private_key_id: "fe4ccc5243c80d2276d776e3a624011343679fce",
-            private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDO6LRlG3fg6FG7\n6Rj2JXHdiIqlIJK8ZLl5Z29Ddytl9GWOmq4ysftHhekreLT/DB+6s1TEdnjMp2zI\nsJWxUiOnvhR7HjEbA+gLBMs9T/spXv1KTtPDttieYYpHLGCsf18Xldp+JLtmHcyt\nZBQcZYH7qfPwfcYNwjiIGYYcHmkTMEWbsNAnK5pwgrYpkmoHa7ktqSWy4cNtcZrG\nMZy/IPVWtfNITkqSaYDoK/bDI4lbQ1cDANRcuQX+QE9xU9Hy2wqzPDq4PTUv1HYh\nj8EaM8bHIRKeuH3nJN19QmW6zu6NYyDjaBQKTmg74tLW9mZQQ9Oj/bgEXlpGsbe/\nRu6QZCvRAgMBAAECggEAXW0Fx4GXp54/CbI+6yYNPBKjR9xlZVu1w/PIcZYlqmuo\nT7PYZFupMqpsloxybZdz3EGNTQiRkxcmL5hMfzyvjNZvOQhw89nXtOH9QzoSFqQl\nip/9TqoJNbqlTW3kWP9KWMP5XGwJkhpyiPhffFL5VkFvPHAONbg0/n9H5vp0R4z8\ndvJg3cn+TQ38QdqbJ392dFHyEWcCbNQYXGlb4Ujsr3+TTdoH2u2ri00rrm3oESh0\nMMd38zdc3Fbs/NarwhJTaRrurhUxL0YFIIRSg3auqEKIESDVQWNuJVS44ZusB6bI\nQx4DhGdICH2sdK4L5gbhV0raycKWFRPQV8Zg/y0VYQKBgQDsVM93fYDJKHWgs6H/\n1YRGpeLd2bV8/nORxHbx+EXhjrvNWi2/RNedhIyJEHauK1nrmLMorjL2rIY2yrs5\nqJFJLOc9PUpmTmZ/r+VFA75H4ARdC3yaETnho8EVnQuJeDelsgP/dr1pgH1QY3Xf\no2yEVQy/xR7G9/LKlpiebVomPwKBgQDgIQiWvaTC00Kjry8S59Q5rY7/W9QAgBl3\nQCPKluwetlyJnJ+Pe1ZzreBsa8rnyoSJlEfriZKV9z1Nj+72D3pclwaCoKIeOTEo\n+no4eTVSV5CPeqhIlUWUuSkE5teOBmd8NvFGuzLDxNQhVQdoQfXESRduagqh+4qg\npzQ5QA3J7wKBgAPgZELOgTVLf5pyN98Nbo0GHZGMB6kUN2sVsOnJK8RGZhg5OXTg\nuTSxPujkpz22IlR1/cJWESnwrIbrjmSkujVcEjLz9Wt2L8I6bWVTaWSebRPlo1aX\nn75uxDUJjW3k1ezW3a/sD7FSVTvjVcSkVpxZFMt0fUvAN3BRRhGbM5ZbAoGAYRAt\nRgrvNaiELZsKied4U1pEmXZNQ8I2RRyz42Kk81AKl1YLC/pgIEzm6k1sXCGqcGKV\nGv5DS0r9c3+n/0wIs9x750plqy0dix+emqJzYyuk4V4/Tt/GeHgPuZ23MDy5yGOK\n7hTYEUxGigDm6lHWe6Ej0p9951SmXpjK1xhUYGUCgYEAjIiJpfTfz7IdKvDD2wi2\nhm4iCP45kadDmBdrK9fGrxkR/Gy1YDcvn5BSyp3ijJeSIjtslubWdyC95h1RDIeC\nK9cwwEreQOLYbbF0vo+TIemeQLPQsSbvd6zZTTbbPKZCJPtVU599xLlb6U41zuQo\n/aeNpKEYM/rVBdajN6xPzL4=\n-----END PRIVATE KEY-----\n",
-            client_email: "emiliano@i-hexagon-401015.iam.gserviceaccount.com",
-            client_id: "108014910557901794407",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/emiliano%40i-hexagon-401015.iam.gserviceaccount.com",
-            universe_domain: "googleapis.com"
-        };
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            null,
-            key.private_key,
-            ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            null
-        );
-        google.options({ auth: jwtClient });
-        const spreadsheetId = '1IDFjA-LTE12IAIAZ7JU-ElM6SvjGBs4exSEmCyLbmQg';
-        const range = 'Sheet1'; // Adjust as per your sheet name
 
-        const sheets = google.sheets('v4')
+        console.log('preRows')
+        const rows = await collection.find().toArray();
+        console.log(rows)
+        if (rows.length) {
+            // Your logic goes here...
+            const closing_data = [];
+            var zips = [];
 
-        sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        },
-            (err, response) => {
-                if (err) {
-                    console.log('The API returned an error: ' + err);
-                    return;
+            rows.forEach((row, index) => {
+                if (index === 0) return;
+                const data = {
+                    closing_date: row['Close Date'],
+                    postal_code: row['Postal Code'],
+                    closing_price: row['Close Price']
                 }
-
-                const rows = response.data.values;
-                if (rows.length) {
-                    // Your logic goes here...
-                    const closing_data = [];
-                    var zips = [];
-
-                    rows.forEach((row, index) => {
-                        if (index === 0) return;
-                        const data = {
-                            closing_date: row[53],
-                            postal_code: row[250],
-                            closing_price: row[54]
-                        }
-                        zips.push(row[250]);
-                        closing_data.push(data);
-                    });
-                    closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
-
-                    let closingDates = closing_data.map(property => new Date(property.closing_date));
-                    let startDate = closingDates[0];
-                    let endDate = closingDates[closingDates.length - 1];
-                    let segments = [];
-                    let sums = [];
-
-                    while (startDate <= endDate) {
-                        let segmentEnd = new Date(startDate);
-                        segmentEnd.setDate(segmentEnd.getDate() + 15);
-
-                        let sum = closing_data
-                            .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
-                            .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
-
-                        segments.push(startDate);
-                        sums.push(sum);
-
-                        startDate = segmentEnd;
-                    }
-
-                    console.log("Segments:", segments);
-                    console.log("Sums:", sums);
-                    zips = [...new Set(zips)];
-                    const name = 'Value Summation of 1M+ Homes Closed Every 15 Days';
-                    res.render('users/render_sum', { segments, sums, name, zips });
+                if (!zips.includes(row['Postal Code'])) {
+                    zips.push(row['Postal Code']);
                 }
+                closing_data.push(data);
             });
+            closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+
+            let closingDates = closing_data.map(property => new Date(property.closing_date));
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+            let segments = [];
+            let sums = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+                let sum = closing_data
+                    .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
+                    .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
+
+                segments.push(startDate);
+                sums.push(sum);
+
+                startDate = segmentEnd;
+            }
+
+            console.log("Segments:", segments);
+            console.log("Sums:", sums);
+            console.log(zips)
+            const name = 'Value Summation of 1M+ Homes Closed Every 15 Days';
+            res.render('users/render_sum', { segments, sums, name, zips });
+        }
+
     } catch (e) {
         console.log(e);
     }
 }
+
 module.exports.renderZipPrices = async (req, res) => {
     console.log('renderZipPrices');
+    await client.connect();
+    // Select the database
+    const db = client.db('Real_Estate');
+
+    // Select the collection
+    const collection = db.collection('BI');
+    console.log(collection)
+    // Perform a query 
+
     try {
-        const key = {
-            type: "service_account",
-            project_id: "i-hexagon-401015",
-            private_key_id: "fe4ccc5243c80d2276d776e3a624011343679fce",
-            private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDO6LRlG3fg6FG7\n6Rj2JXHdiIqlIJK8ZLl5Z29Ddytl9GWOmq4ysftHhekreLT/DB+6s1TEdnjMp2zI\nsJWxUiOnvhR7HjEbA+gLBMs9T/spXv1KTtPDttieYYpHLGCsf18Xldp+JLtmHcyt\nZBQcZYH7qfPwfcYNwjiIGYYcHmkTMEWbsNAnK5pwgrYpkmoHa7ktqSWy4cNtcZrG\nMZy/IPVWtfNITkqSaYDoK/bDI4lbQ1cDANRcuQX+QE9xU9Hy2wqzPDq4PTUv1HYh\nj8EaM8bHIRKeuH3nJN19QmW6zu6NYyDjaBQKTmg74tLW9mZQQ9Oj/bgEXlpGsbe/\nRu6QZCvRAgMBAAECggEAXW0Fx4GXp54/CbI+6yYNPBKjR9xlZVu1w/PIcZYlqmuo\nT7PYZFupMqpsloxybZdz3EGNTQiRkxcmL5hMfzyvjNZvOQhw89nXtOH9QzoSFqQl\nip/9TqoJNbqlTW3kWP9KWMP5XGwJkhpyiPhffFL5VkFvPHAONbg0/n9H5vp0R4z8\ndvJg3cn+TQ38QdqbJ392dFHyEWcCbNQYXGlb4Ujsr3+TTdoH2u2ri00rrm3oESh0\nMMd38zdc3Fbs/NarwhJTaRrurhUxL0YFIIRSg3auqEKIESDVQWNuJVS44ZusB6bI\nQx4DhGdICH2sdK4L5gbhV0raycKWFRPQV8Zg/y0VYQKBgQDsVM93fYDJKHWgs6H/\n1YRGpeLd2bV8/nORxHbx+EXhjrvNWi2/RNedhIyJEHauK1nrmLMorjL2rIY2yrs5\nqJFJLOc9PUpmTmZ/r+VFA75H4ARdC3yaETnho8EVnQuJeDelsgP/dr1pgH1QY3Xf\no2yEVQy/xR7G9/LKlpiebVomPwKBgQDgIQiWvaTC00Kjry8S59Q5rY7/W9QAgBl3\nQCPKluwetlyJnJ+Pe1ZzreBsa8rnyoSJlEfriZKV9z1Nj+72D3pclwaCoKIeOTEo\n+no4eTVSV5CPeqhIlUWUuSkE5teOBmd8NvFGuzLDxNQhVQdoQfXESRduagqh+4qg\npzQ5QA3J7wKBgAPgZELOgTVLf5pyN98Nbo0GHZGMB6kUN2sVsOnJK8RGZhg5OXTg\nuTSxPujkpz22IlR1/cJWESnwrIbrjmSkujVcEjLz9Wt2L8I6bWVTaWSebRPlo1aX\nn75uxDUJjW3k1ezW3a/sD7FSVTvjVcSkVpxZFMt0fUvAN3BRRhGbM5ZbAoGAYRAt\nRgrvNaiELZsKied4U1pEmXZNQ8I2RRyz42Kk81AKl1YLC/pgIEzm6k1sXCGqcGKV\nGv5DS0r9c3+n/0wIs9x750plqy0dix+emqJzYyuk4V4/Tt/GeHgPuZ23MDy5yGOK\n7hTYEUxGigDm6lHWe6Ej0p9951SmXpjK1xhUYGUCgYEAjIiJpfTfz7IdKvDD2wi2\nhm4iCP45kadDmBdrK9fGrxkR/Gy1YDcvn5BSyp3ijJeSIjtslubWdyC95h1RDIeC\nK9cwwEreQOLYbbF0vo+TIemeQLPQsSbvd6zZTTbbPKZCJPtVU599xLlb6U41zuQo\n/aeNpKEYM/rVBdajN6xPzL4=\n-----END PRIVATE KEY-----\n",
-            client_email: "emiliano@i-hexagon-401015.iam.gserviceaccount.com",
-            client_id: "108014910557901794407",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/emiliano%40i-hexagon-401015.iam.gserviceaccount.com",
-            universe_domain: "googleapis.com"
-        };
 
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            null,
-            key.private_key,
-            ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            null
-        );
+        console.log('preRows')
+        const rows = await collection.find().toArray();
+        console.log(rows)
+        const reqd_zips = req.query.zip
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
 
-        google.options({ auth: jwtClient });
+            rows.forEach((row, index) => {
+                if (index === 0) return;
 
-        const spreadsheetId = '1IDFjA-LTE12IAIAZ7JU-ElM6SvjGBs4exSEmCyLbmQg';
-        const range = 'Sheet1';
-        const sheets = google.sheets('v4');
-        sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        },
-            (err, response) => {
-                try {
-                    if (err) {
-                        console.log('The API returned an error: ' + err);
-                        return;
+                if (reqd_zips.includes(row['Postal Code'])) {
+                    let existingEntry = closing_data.find(entry => entry.closing_date === row['Close Date']);
+                    if (existingEntry) {
+                        existingEntry.closing_price += parseFloat(row['Close Price']);
+                    } else {
+                        let data = {
+                            closing_date: row['Close Date'],
+                            postal_code: row['Postal Code'],
+                            closing_price: parseFloat(row['Close Price'])
+                        }
+                        closing_data.push(data);
                     }
-
-                    const reqd_zips = req.query.zip;
-                    const rows = response.data.values;
-                    if (rows.length) {
-                        const closing_data = [];
-                        var zips = [];
-
-                        rows.forEach((row, index) => {
-                            if (index === 0) return;
-
-                            if (reqd_zips.includes(row[250])) {
-                                let existingEntry = closing_data.find(entry => entry.closing_date === row[53]);
-                                if (existingEntry) {
-                                    existingEntry.closing_price += parseFloat(row[54]);
-                                } else {
-                                    let data = {
-                                        closing_date: row[53],
-                                        postal_code: row[250],
-                                        closing_price: parseFloat(row[54])
-                                    }
-                                    closing_data.push(data);
-                                }
-                            } else {
-                                let data = {
-                                    closing_date: row[53],
-                                    closing_price: 0
-                                }
-                                closing_data.push(data);
-                            }
-                            zips.push(row[250]);
-                        });
-
-                        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
-                        const closing_date = [];
-                        const closing_price = [];
-                        closing_data.forEach(property => {
-                            closing_price.push(property.closing_price);
-                            closing_date.push(property.closing_date);
-                        });
-
-                        console.log(closing_data);
-                        console.log(closing_price);
-                        console.log(closing_date);
-                        zips = [...new Set(zips)];
-                        const name = `Total Daily Sales Volume of Homes 1M+  in the Following Zip Codes: ${reqd_zips}`;
-                        res.render('users/dates_prices', { closing_date, closing_price, name, zips });
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        closing_price: 0
                     }
-                } catch (e) {
-                    console.log(e);
+                    closing_data.push(data);
+                }
+                if (!zips.includes(row['Postal Code'])) {
+                    zips.push(row['Postal Code']);
                 }
             });
+
+            closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            const closing_date = [];
+            const closing_price = [];
+            closing_data.forEach(property => {
+                closing_price.push(property.closing_price);
+                closing_date.push(property.closing_date);
+            });
+
+            console.log(closing_data);
+            console.log(closing_price);
+            console.log(closing_date);
+            const name = `Total Daily Sales Volume of Homes 1M+  in the Following Zip Codes: ${reqd_zips}`;
+            res.render('users/dates_prices', { closing_date, closing_price, name, zips });
+        }
     } catch (e) {
         console.log(e);
     }
+
 };
 
 module.exports.printCSV = async (req, res) => {
     console.log('printCSV');
+    await client.connect();
+    // Select the database
+    const db = client.db('Real_Estate');
+
+    // Select the collection
+    const collection = db.collection('BI');
+    console.log(collection)
+    // Perform a query 
+
     try {
-        // Sensitive key should be stored securely, not in code.
-        const key = {
-            project_id: "i-hexagon-401015",
-            private_key_id: "fe4ccc5243c80d2276d776e3a624011343679fce",
-            private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDO6LRlG3fg6FG7\n6Rj2JXHdiIqlIJK8ZLl5Z29Ddytl9GWOmq4ysftHhekreLT/DB+6s1TEdnjMp2zI\nsJWxUiOnvhR7HjEbA+gLBMs9T/spXv1KTtPDttieYYpHLGCsf18Xldp+JLtmHcyt\nZBQcZYH7qfPwfcYNwjiIGYYcHmkTMEWbsNAnK5pwgrYpkmoHa7ktqSWy4cNtcZrG\nMZy/IPVWtfNITkqSaYDoK/bDI4lbQ1cDANRcuQX+QE9xU9Hy2wqzPDq4PTUv1HYh\nj8EaM8bHIRKeuH3nJN19QmW6zu6NYyDjaBQKTmg74tLW9mZQQ9Oj/bgEXlpGsbe/\nRu6QZCvRAgMBAAECggEAXW0Fx4GXp54/CbI+6yYNPBKjR9xlZVu1w/PIcZYlqmuo\nT7PYZFupMqpsloxybZdz3EGNTQiRkxcmL5hMfzyvjNZvOQhw89nXtOH9QzoSFqQl\nip/9TqoJNbqlTW3kWP9KWMP5XGwJkhpyiPhffFL5VkFvPHAONbg0/n9H5vp0R4z8\ndvJg3cn+TQ38QdqbJ392dFHyEWcCbNQYXGlb4Ujsr3+TTdoH2u2ri00rrm3oESh0\nMMd38zdc3Fbs/NarwhJTaRrurhUxL0YFIIRSg3auqEKIESDVQWNuJVS44ZusB6bI\nQx4DhGdICH2sdK4L5gbhV0raycKWFRPQV8Zg/y0VYQKBgQDsVM93fYDJKHWgs6H/\n1YRGpeLd2bV8/nORxHbx+EXhjrvNWi2/RNedhIyJEHauK1nrmLMorjL2rIY2yrs5\nqJFJLOc9PUpmTmZ/r+VFA75H4ARdC3yaETnho8EVnQuJeDelsgP/dr1pgH1QY3Xf\no2yEVQy/xR7G9/LKlpiebVomPwKBgQDgIQiWvaTC00Kjry8S59Q5rY7/W9QAgBl3\nQCPKluwetlyJnJ+Pe1ZzreBsa8rnyoSJlEfriZKV9z1Nj+72D3pclwaCoKIeOTEo\n+no4eTVSV5CPeqhIlUWUuSkE5teOBmd8NvFGuzLDxNQhVQdoQfXESRduagqh+4qg\npzQ5QA3J7wKBgAPgZELOgTVLf5pyN98Nbo0GHZGMB6kUN2sVsOnJK8RGZhg5OXTg\nuTSxPujkpz22IlR1/cJWESnwrIbrjmSkujVcEjLz9Wt2L8I6bWVTaWSebRPlo1aX\nn75uxDUJjW3k1ezW3a/sD7FSVTvjVcSkVpxZFMt0fUvAN3BRRhGbM5ZbAoGAYRAt\nRgrvNaiELZsKied4U1pEmXZNQ8I2RRyz42Kk81AKl1YLC/pgIEzm6k1sXCGqcGKV\nGv5DS0r9c3+n/0wIs9x750plqy0dix+emqJzYyuk4V4/Tt/GeHgPuZ23MDy5yGOK\n7hTYEUxGigDm6lHWe6Ej0p9951SmXpjK1xhUYGUCgYEAjIiJpfTfz7IdKvDD2wi2\nhm4iCP45kadDmBdrK9fGrxkR/Gy1YDcvn5BSyp3ijJeSIjtslubWdyC95h1RDIeC\nK9cwwEreQOLYbbF0vo+TIemeQLPQsSbvd6zZTTbbPKZCJPtVU599xLlb6U41zuQo\n/aeNpKEYM/rVBdajN6xPzL4=\n-----END PRIVATE KEY-----\n",
-            client_email: "emiliano@i-hexagon-401015.iam.gserviceaccount.com",
-            client_id: "108014910557901794407",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/emiliano%40i-hexagon-401015.iam.gserviceaccount.com",
-            universe_domain: "googleapis.com"
-        }
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            null,
-            key.private_key,
-            ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            null
-        );
 
-        google.options({ auth: jwtClient });
+        console.log('preRows')
+        const rows = await collection.find().toArray();
+        console.log(rows)
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
 
-        const spreadsheetId = '1IDFjA-LTE12IAIAZ7JU-ElM6SvjGBs4exSEmCyLbmQg';
-        const range = 'Sheet1';
-        const sheets = google.sheets('v4');
-        sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        },
-            (err, response) => {
-                try {
-                    if (err) {
-                        console.log('The API returned an error: ' + err);
-                        return;
-                    }
+            rows.forEach((row, index) => {
 
-                    const rows = response.data.values;
-                    if (rows.length) {
-                        const closing_data = [];
-                        var zips = [];
-
-                        rows.forEach((row, index) => {
-                            if (index === 0) return;
-
-                            let existingEntry = closing_data.find(entry => entry.closing_date === row[53]);
-                            if (existingEntry) {
-                                existingEntry.closing_price += parseFloat(row[54]);
-                            } else {
-                                let data = {
-                                    closing_date: row[53],
-                                    postal_code: row[250],
-                                    closing_price: parseFloat(row[54])
-                                };
-                                zips.push(row[250]);
-                                closing_data.push(data);
-                            }
-                        });
-                        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
-                        const closing_date = [];
-                        const closing_price = [];
-                        closing_data.forEach(property => {
-                            closing_price.push(property.closing_price);
-                            closing_date.push(property.closing_date);
-                        });
-                        zips = [...new Set(zips)];
-                        const name = 'Total Daily Sales Volume of Closed Homes 1M+';
-                        res.render('users/dates_prices', { closing_date, closing_price, name, zips });
-                    }
-                } catch (e) {
-                    console.log(e);
+                let existingEntry = closing_data.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntry) {
+                    existingEntry.closing_price += parseFloat(row['Close Price']);
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    };
+                    closing_data.push(data);
+                } if (!zips.includes(row['Postal Code'])) {
+                    zips.push(row['Postal Code']);
                 }
-            });  // Corrected closing brackets
+            });
+            closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            const closing_date = [];
+            const closing_price = [];
+            closing_data.forEach(property => {
+                closing_price.push(property.closing_price);
+                closing_date.push(property.closing_date);
+            });
+            console.log(closing_data)
+            const name = 'Total Daily Sales Volume of Closed Homes 1M+';
+            res.render('users/dates_prices', { closing_date, closing_price, name, zips });
+        }
+
     } catch (err) {
         console.error('Error:', err);
         res.status(500).send('Internal Server Error');
@@ -405,190 +302,134 @@ module.exports.printCSV = async (req, res) => {
 
 module.exports.renderCount = async (req, res) => {
     console.log('renderCount')
+    await client.connect();
+    // Select the database
+    const db = client.db('Real_Estate');
+
+    // Select the collection
+    const collection = db.collection('BI');
+    console.log(collection)
+    // Perform a query 
+
     try {
-        const key = {
-            project_id: "i-hexagon-401015",
-            private_key_id: "fe4ccc5243c80d2276d776e3a624011343679fce",
-            private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDO6LRlG3fg6FG7\n6Rj2JXHdiIqlIJK8ZLl5Z29Ddytl9GWOmq4ysftHhekreLT/DB+6s1TEdnjMp2zI\nsJWxUiOnvhR7HjEbA+gLBMs9T/spXv1KTtPDttieYYpHLGCsf18Xldp+JLtmHcyt\nZBQcZYH7qfPwfcYNwjiIGYYcHmkTMEWbsNAnK5pwgrYpkmoHa7ktqSWy4cNtcZrG\nMZy/IPVWtfNITkqSaYDoK/bDI4lbQ1cDANRcuQX+QE9xU9Hy2wqzPDq4PTUv1HYh\nj8EaM8bHIRKeuH3nJN19QmW6zu6NYyDjaBQKTmg74tLW9mZQQ9Oj/bgEXlpGsbe/\nRu6QZCvRAgMBAAECggEAXW0Fx4GXp54/CbI+6yYNPBKjR9xlZVu1w/PIcZYlqmuo\nT7PYZFupMqpsloxybZdz3EGNTQiRkxcmL5hMfzyvjNZvOQhw89nXtOH9QzoSFqQl\nip/9TqoJNbqlTW3kWP9KWMP5XGwJkhpyiPhffFL5VkFvPHAONbg0/n9H5vp0R4z8\ndvJg3cn+TQ38QdqbJ392dFHyEWcCbNQYXGlb4Ujsr3+TTdoH2u2ri00rrm3oESh0\nMMd38zdc3Fbs/NarwhJTaRrurhUxL0YFIIRSg3auqEKIESDVQWNuJVS44ZusB6bI\nQx4DhGdICH2sdK4L5gbhV0raycKWFRPQV8Zg/y0VYQKBgQDsVM93fYDJKHWgs6H/\n1YRGpeLd2bV8/nORxHbx+EXhjrvNWi2/RNedhIyJEHauK1nrmLMorjL2rIY2yrs5\nqJFJLOc9PUpmTmZ/r+VFA75H4ARdC3yaETnho8EVnQuJeDelsgP/dr1pgH1QY3Xf\no2yEVQy/xR7G9/LKlpiebVomPwKBgQDgIQiWvaTC00Kjry8S59Q5rY7/W9QAgBl3\nQCPKluwetlyJnJ+Pe1ZzreBsa8rnyoSJlEfriZKV9z1Nj+72D3pclwaCoKIeOTEo\n+no4eTVSV5CPeqhIlUWUuSkE5teOBmd8NvFGuzLDxNQhVQdoQfXESRduagqh+4qg\npzQ5QA3J7wKBgAPgZELOgTVLf5pyN98Nbo0GHZGMB6kUN2sVsOnJK8RGZhg5OXTg\nuTSxPujkpz22IlR1/cJWESnwrIbrjmSkujVcEjLz9Wt2L8I6bWVTaWSebRPlo1aX\nn75uxDUJjW3k1ezW3a/sD7FSVTvjVcSkVpxZFMt0fUvAN3BRRhGbM5ZbAoGAYRAt\nRgrvNaiELZsKied4U1pEmXZNQ8I2RRyz42Kk81AKl1YLC/pgIEzm6k1sXCGqcGKV\nGv5DS0r9c3+n/0wIs9x750plqy0dix+emqJzYyuk4V4/Tt/GeHgPuZ23MDy5yGOK\n7hTYEUxGigDm6lHWe6Ej0p9951SmXpjK1xhUYGUCgYEAjIiJpfTfz7IdKvDD2wi2\nhm4iCP45kadDmBdrK9fGrxkR/Gy1YDcvn5BSyp3ijJeSIjtslubWdyC95h1RDIeC\nK9cwwEreQOLYbbF0vo+TIemeQLPQsSbvd6zZTTbbPKZCJPtVU599xLlb6U41zuQo\n/aeNpKEYM/rVBdajN6xPzL4=\n-----END PRIVATE KEY-----\n",
-            client_email: "emiliano@i-hexagon-401015.iam.gserviceaccount.com",
-            client_id: "108014910557901794407",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/emiliano%40i-hexagon-401015.iam.gserviceaccount.com",
-            universe_domain: "googleapis.com"
-        };
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            null,
-            key.private_key,
-            ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            null
-        );
 
-        google.options({ auth: jwtClient });
+        console.log('preRows')
+        const rows = await collection.find().toArray();
+        console.log(rows)
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
 
-        const spreadsheetId = '1IDFjA-LTE12IAIAZ7JU-ElM6SvjGBs4exSEmCyLbmQg';
-        const range = 'Sheet1';
-        const sheets = google.sheets('v4');
-        sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        },
-            (err, response) => {
-                try {
-                    if (err) {
-                        console.log('The API returned an error: ' + err);
-                        return;
-                    }
-
-                    const rows = response.data.values;
-                    if (rows.length) {
-                        const closing_data = [];
-                        var zips = [];
-
-                        rows.forEach((row, index) => {
-                            if (index === 0) return;
-                            data = {
-                                closing_date: row[53],
-                                postal_code: row[250],
-                                closing_price: row[54]
-                            }
-                            zips.push(row[250])
-                            closing_data.push(data)
-                        });
-                        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
-                        let closingDates = closing_data.map(property => new Date(property.closing_date));
-
-                        let startDate = closingDates[0];
-                        let endDate = closingDates[closingDates.length - 1];
-
-                        let segments = [];
-                        let counts = [];
-
-                        while (startDate <= endDate) {
-                            let segmentEnd = new Date(startDate);
-                            segmentEnd.setDate(segmentEnd.getDate() + 15);
-                            let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
-
-                            segments.push(startDate);
-                            counts.push(count);
-
-                            startDate = segmentEnd;
-                        }
-
-                        console.log("Segments:", segments);
-                        console.log("Counts:", counts);
-                        zips = [...new Set(zips)]
-                        const name = 'Homes Over 1M+ Closed Every 15 Days'
-                        res.render('users/render_count', { segments, counts, name, zips })
-                    }
-                } catch (e) {
-                    console.log(e)
+            rows.forEach((row, index) => {
+                if (index === 0) return;
+                data = {
+                    closing_date: row['Close Date'],
+                    postal_code: row['Postal Code'],
+                    closing_price: row['Close Price']
                 }
+                if (!zips.includes(row['Postal Code'])) {
+                    zips.push(row['Postal Code']);
+                }
+                closing_data.push(data)
+            });
+            closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            let closingDates = closing_data.map(property => new Date(property.closing_date));
+
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+
+            let segments = [];
+            let counts = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
+
+                segments.push(startDate);
+                counts.push(count);
+
+                startDate = segmentEnd;
             }
-        );
+
+            console.log("Segments:", segments);
+            console.log("Counts:", counts);
+            const name = 'Homes Over 1M+ Closed Every 15 Days'
+            res.render('users/render_count', { segments, counts, name, zips })
+        }
     } catch (e) {
         console.log(e)
     }
-};
+}
 
 module.exports.renderZipCount = async (req, res) => {
     console.log('renderZipCount')
+    await client.connect();
+    // Select the database
+    const db = client.db('Real_Estate');
+
+    // Select the collection
+    const collection = db.collection('BI');
+    console.log(collection)
+    // Perform a query 
+
     try {
-        const key = {
-            project_id: "i-hexagon-401015",
-            private_key_id: "fe4ccc5243c80d2276d776e3a624011343679fce",
-            private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDO6LRlG3fg6FG7\n6Rj2JXHdiIqlIJK8ZLl5Z29Ddytl9GWOmq4ysftHhekreLT/DB+6s1TEdnjMp2zI\nsJWxUiOnvhR7HjEbA+gLBMs9T/spXv1KTtPDttieYYpHLGCsf18Xldp+JLtmHcyt\nZBQcZYH7qfPwfcYNwjiIGYYcHmkTMEWbsNAnK5pwgrYpkmoHa7ktqSWy4cNtcZrG\nMZy/IPVWtfNITkqSaYDoK/bDI4lbQ1cDANRcuQX+QE9xU9Hy2wqzPDq4PTUv1HYh\nj8EaM8bHIRKeuH3nJN19QmW6zu6NYyDjaBQKTmg74tLW9mZQQ9Oj/bgEXlpGsbe/\nRu6QZCvRAgMBAAECggEAXW0Fx4GXp54/CbI+6yYNPBKjR9xlZVu1w/PIcZYlqmuo\nT7PYZFupMqpsloxybZdz3EGNTQiRkxcmL5hMfzyvjNZvOQhw89nXtOH9QzoSFqQl\nip/9TqoJNbqlTW3kWP9KWMP5XGwJkhpyiPhffFL5VkFvPHAONbg0/n9H5vp0R4z8\ndvJg3cn+TQ38QdqbJ392dFHyEWcCbNQYXGlb4Ujsr3+TTdoH2u2ri00rrm3oESh0\nMMd38zdc3Fbs/NarwhJTaRrurhUxL0YFIIRSg3auqEKIESDVQWNuJVS44ZusB6bI\nQx4DhGdICH2sdK4L5gbhV0raycKWFRPQV8Zg/y0VYQKBgQDsVM93fYDJKHWgs6H/\n1YRGpeLd2bV8/nORxHbx+EXhjrvNWi2/RNedhIyJEHauK1nrmLMorjL2rIY2yrs5\nqJFJLOc9PUpmTmZ/r+VFA75H4ARdC3yaETnho8EVnQuJeDelsgP/dr1pgH1QY3Xf\no2yEVQy/xR7G9/LKlpiebVomPwKBgQDgIQiWvaTC00Kjry8S59Q5rY7/W9QAgBl3\nQCPKluwetlyJnJ+Pe1ZzreBsa8rnyoSJlEfriZKV9z1Nj+72D3pclwaCoKIeOTEo\n+no4eTVSV5CPeqhIlUWUuSkE5teOBmd8NvFGuzLDxNQhVQdoQfXESRduagqh+4qg\npzQ5QA3J7wKBgAPgZELOgTVLf5pyN98Nbo0GHZGMB6kUN2sVsOnJK8RGZhg5OXTg\nuTSxPujkpz22IlR1/cJWESnwrIbrjmSkujVcEjLz9Wt2L8I6bWVTaWSebRPlo1aX\nn75uxDUJjW3k1ezW3a/sD7FSVTvjVcSkVpxZFMt0fUvAN3BRRhGbM5ZbAoGAYRAt\nRgrvNaiELZsKied4U1pEmXZNQ8I2RRyz42Kk81AKl1YLC/pgIEzm6k1sXCGqcGKV\nGv5DS0r9c3+n/0wIs9x750plqy0dix+emqJzYyuk4V4/Tt/GeHgPuZ23MDy5yGOK\n7hTYEUxGigDm6lHWe6Ej0p9951SmXpjK1xhUYGUCgYEAjIiJpfTfz7IdKvDD2wi2\nhm4iCP45kadDmBdrK9fGrxkR/Gy1YDcvn5BSyp3ijJeSIjtslubWdyC95h1RDIeC\nK9cwwEreQOLYbbF0vo+TIemeQLPQsSbvd6zZTTbbPKZCJPtVU599xLlb6U41zuQo\n/aeNpKEYM/rVBdajN6xPzL4=\n-----END PRIVATE KEY-----\n",
-            client_email: "emiliano@i-hexagon-401015.iam.gserviceaccount.com",
-            client_id: "108014910557901794407",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/emiliano%40i-hexagon-401015.iam.gserviceaccount.com",
-            universe_domain: "googleapis.com"
-        };
 
-        const jwtClient = new google.auth.JWT(
-            key.client_email,
-            null,
-            key.private_key,
-            ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            null
-        );
+        console.log('preRows')
+        const rows = await collection.find().toArray();
+        console.log(rows)
+        const reqd_zips = req.query.zip
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
 
-        google.options({ auth: jwtClient });
+            rows.forEach((row, index) => {
+                if (index === 0) return;
 
-        const spreadsheetId = '1IDFjA-LTE12IAIAZ7JU-ElM6SvjGBs4exSEmCyLbmQg';
-        const range = 'Sheet1';
-        const sheets = google.sheets('v4');
-        sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        },
-            (err, response) => {
-                try {
-                    if (err) {
-                        console.log('The API returned an error: ' + err);
-                        return;
+                if (reqd_zips.includes(row['Postal Code'])) {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: row['Close Price']
                     }
-                    const reqd_zips = req.query.zip;
-                    const rows = response.data.values;
-                    if (rows.length) {
-                        const closing_data = [];
-                        var zips = [];
 
-                        rows.forEach((row, index) => {
-                            if (index === 0) return;
-
-                            if (reqd_zips.includes(row[250])) {
-                                let data = {
-                                    closing_date: row[53],
-                                    postal_code: row[250],
-                                    closing_price: row[54]
-                                }
-
-                                closing_data.push(data)
-                            }
-                            zips.push(row[250])
-                        });
-                        closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
-                        let closingDates = closing_data.map(property => new Date(property.closing_date));
-
-                        let startDate = closingDates[0];
-                        let endDate = closingDates[closingDates.length - 1];
-
-                        let segments = [];
-                        let counts = [];
-
-                        while (startDate <= endDate) {
-                            let segmentEnd = new Date(startDate);
-                            segmentEnd.setDate(segmentEnd.getDate() + 15);
-
-                            let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
-
-                            segments.push(startDate);
-                            counts.push(count);
-
-                            startDate = segmentEnd;
-                        }
-
-                        console.log("Segments:", segments);
-                        console.log("Counts:", counts);
-                        zips = [...new Set(zips)]
-                        const name = `Number of Homes Over 1M+ Closed in: ${reqd_zips}`
-                        res.render('users/render_count', { segments, counts, name, zips })
-                    }
-                } catch (e) {
-                    console.log(e)
+                    closing_data.push(data)
                 }
+                if (!zips.includes(row['Postal Code'])) {
+                    zips.push(row['Postal Code']);
+                }
+            });
+            closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            let closingDates = closing_data.map(property => new Date(property.closing_date));
+
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+
+            let segments = [];
+            let counts = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+                let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
+
+                segments.push(startDate);
+                counts.push(count);
+
+                startDate = segmentEnd;
             }
-        );
-    } catch (err) {
-        console.log('Error:', err);
-        res.status(500).send('Internal Server Error');
+
+            console.log("Segments:", segments);
+            console.log("Counts:", counts);
+            const name = `Number of Homes Over 1M+ Closed in: ${reqd_zips}`
+            res.render('users/render_count', { segments, counts, name, zips })
+        }
+    } catch (e) {
+        console.log(e)
     }
-};
+
+}
 
 
 module.exports.renderBusiness = async (req, res) => {

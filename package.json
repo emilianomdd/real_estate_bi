@@ -33,6 +33,7 @@
     "jspdf-invoice-template": "^1.4.3",
     "jspdf-invoice-template-nodejs": "^1.4.30",
     "method-override": "^3.0.0",
+    "mongodb": "^6.1.0",
     "mongoose": "^5.10.4",
     "multer": "^1.4.2",
     "multer-storage-cloudinary": "^4.0.0",
