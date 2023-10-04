@@ -36,6 +36,10 @@ router.get('/render_stripe/:id', users.RenderStripe)
 router.get('/render_zip_prices', users.renderZipPrices)
 router.get('/render_zip_count', users.renderZipCount)
 router.get('/render_seg_sum', users.renderSegSum)
+router.get('/render_zip_sum', users.zipSegSum)
+
+
+
 router.post('/register_stripe/:id', users.RegisterStripe)
 router.post('/create_store/:id', users.RegisterVendor)
 

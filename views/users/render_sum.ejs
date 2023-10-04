@@ -7,7 +7,7 @@
                 <canvas id="myChart"></canvas>
             </div>
             <div class="mt-6 col-4">
-                <form action="/render_zip_count">
+                <form action="/render_zip_sum">
                     <label for="zip">Look up a specific Zip Codes:</label>
                     <% for (let zip of zips){ %>
                         <input type="checkbox" id="<%=zip%>" name="zip" value="<%=zip%>">
