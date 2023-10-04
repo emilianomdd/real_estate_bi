@@ -121,7 +121,7 @@ module.exports.zipSegSum = async (req, res) => {
                         console.log("Segments:", segments);
                         console.log("Sums:", sums);
                         zips = [...new Set(zips)];
-                        const name = `Segment Sum of the following zip codes: ${reqd_zips}`;
+                        const name = `Value Summation of Homes Sold Every 15 Days in: ${reqd_zips}`;
                         res.render('users/render_sum', { segments, sums, name, zips });
                     }
                 } catch (e) {
@@ -216,7 +216,7 @@ module.exports.renderSegSum = async (req, res) => {
                     console.log("Segments:", segments);
                     console.log("Sums:", sums);
                     zips = [...new Set(zips)];
-                    const name = 'Segment Sum';
+                    const name = 'Value Summation of 1M+ Homes Closed Every 15 Days';
                     res.render('users/render_sum', { segments, sums, name, zips });
                 }
             });
@@ -308,7 +308,7 @@ module.exports.renderZipPrices = async (req, res) => {
                         console.log(closing_price);
                         console.log(closing_date);
                         zips = [...new Set(zips)];
-                        const name = `Total sales volume of homes 1M+  in the following zip codes: ${reqd_zips}`;
+                        const name = `Total Daily Sales Volume of Homes 1M+  in the Following Zip Codes: ${reqd_zips}`;
                         res.render('users/dates_prices', { closing_date, closing_price, name, zips });
                     }
                 } catch (e) {
@@ -389,7 +389,7 @@ module.exports.printCSV = async (req, res) => {
                             closing_date.push(property.closing_date);
                         });
                         zips = [...new Set(zips)];
-                        const name = 'Total Daily Sales Volume of Homes 1M+';
+                        const name = 'Total Daily Sales Volume of Closed Homes 1M+';
                         res.render('users/dates_prices', { closing_date, closing_price, name, zips });
                     }
                 } catch (e) {
@@ -480,7 +480,7 @@ module.exports.renderCount = async (req, res) => {
                         console.log("Segments:", segments);
                         console.log("Counts:", counts);
                         zips = [...new Set(zips)]
-                        const name = 'Segment Count'
+                        const name = 'Homes Over 1M+ Closed Every 15 Days'
                         res.render('users/render_count', { segments, counts, name, zips })
                     }
                 } catch (e) {
@@ -576,7 +576,7 @@ module.exports.renderZipCount = async (req, res) => {
                         console.log("Segments:", segments);
                         console.log("Counts:", counts);
                         zips = [...new Set(zips)]
-                        const name = `Segment Count of ${reqd_zips}`
+                        const name = `Number of Homes Over 1M+ Closed in: ${reqd_zips}`
                         res.render('users/render_count', { segments, counts, name, zips })
                     }
                 } catch (e) {
