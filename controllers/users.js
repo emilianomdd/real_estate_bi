@@ -54,9 +54,8 @@ module.exports.zipSegSum = async (req, res) => {
             var zips = [];
 
             rows.forEach((row, index) => {
-                if (index === 0) return;
-
-                if (reqd_zips.includes(row['Postal Code'])) {
+                const current_zip = `${row['Postal Code']}`
+                if (reqd_zips.includes(current_zip)) {
                     data = {
                         closing_date: row['Close Date'],
                         postal_code: row['Postal Code'],
@@ -185,26 +184,25 @@ module.exports.renderZipPrices = async (req, res) => {
 
     // Select the collection
     const collection = db.collection('BI');
-    console.log(collection)
     // Perform a query 
 
     try {
 
         console.log('preRows')
         const rows = await collection.find().toArray();
-        console.log(rows)
         const reqd_zips = req.query.zip
         if (rows.length) {
             const closing_data = [];
             var zips = [];
 
             rows.forEach((row, index) => {
-                if (index === 0) return;
+                const current_zip = `${row['Postal Code']}`
 
-                if (reqd_zips.includes(row['Postal Code'])) {
-                    let existingEntry = closing_data.find(entry => entry.closing_date === row['Close Date']);
-                    if (existingEntry) {
-                        existingEntry.closing_price += parseFloat(row['Close Price']);
+                if (reqd_zips.includes(current_zip)) {
+                    console.log('in')
+                    let existingEntr = closing_data.find(entry => entry.closing_date === row['Close Date']);
+                    if (existingEntr) {
+                        existingEntr.closing_price += parseFloat(row['Close Price']);
                     } else {
                         let data = {
                             closing_date: row['Close Date'],
@@ -213,12 +211,6 @@ module.exports.renderZipPrices = async (req, res) => {
                         }
                         closing_data.push(data);
                     }
-                } else {
-                    let data = {
-                        closing_date: row['Close Date'],
-                        closing_price: 0
-                    }
-                    closing_data.push(data);
                 }
                 if (!zips.includes(row['Postal Code'])) {
                     zips.push(row['Postal Code']);
@@ -385,8 +377,8 @@ module.exports.renderZipCount = async (req, res) => {
 
             rows.forEach((row, index) => {
                 if (index === 0) return;
-
-                if (reqd_zips.includes(row['Postal Code'])) {
+                const current_zip = `${row['Postal Code']}`
+                if (reqd_zips.includes(current_zip)) {
                     let data = {
                         closing_date: row['Close Date'],
                         postal_code: row['Postal Code'],
@@ -394,12 +386,6 @@ module.exports.renderZipCount = async (req, res) => {
                     }
 
                     closing_data.push(data)
-                } else {
-                    let data = {
-                        closing_date: row['Close Date'],
-                        closing_price: 0
-                    }
-                    closing_data.push(data);
                 }
                 if (!zips.includes(row['Postal Code'])) {
                     zips.push(row['Postal Code']);
