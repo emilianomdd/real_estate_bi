@@ -37,7 +37,7 @@ router.get('/render_zip_prices', users.renderZipPrices)
 router.get('/render_zip_count', users.renderZipCount)
 router.get('/render_seg_sum', users.renderSegSum)
 router.get('/render_zip_sum', users.zipSegSum)
-
+router.get('/do_excel', users.doExcel)
 
 
 router.post('/register_stripe/:id', users.RegisterStripe)

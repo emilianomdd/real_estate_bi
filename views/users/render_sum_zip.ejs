@@ -7,7 +7,7 @@
                 <canvas id="myChart"></canvas>
             </div>
             <div class="mt-6 col-4">
-                <form action="/render_zip_prices">
+                <form action="/render_zip_sum">
                     <label for="zip">Look up a specific Zip Codes:</label>
                     <% for (let zip of zips){ %>
                         <input type="checkbox" id="<%=zip%>" name="zip" value="<%=zip%>">
@@ -19,16 +19,26 @@
                 </form>
             </div>
 
+            <div class="row">
+                <div class="col-8">
+                    <canvas id="myChart"></canvas>
+                </div>
+                <div class="mt-6 col-4">
+                    <form action="/do_excel">
+                        <input type="hidden" id="ids" name="ids" value="<%=reqd_zips%>">
+            
+                        <button>Create Excel With Properties in Graph</button>
+                    </form>
+                </div>
+            
+            </div>
         </div>
-
-         
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-
-        var volumes = <%- JSON.stringify(closing_price) %>;
+        var volumes = <%- JSON.stringify(sums) %>;
         var name = <%- JSON.stringify(name) %>;
-        var dates = <%- JSON.stringify(closing_date) %>;
+        var dates = <%- JSON.stringify(segments) %>;
         const ctx = document.getElementById('myChart');
 
         new Chart(ctx, {

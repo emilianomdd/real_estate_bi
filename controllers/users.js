@@ -31,6 +31,76 @@ const MongoDBStore = require("connect-mongo")(session);
 const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp';
 const client = new MongoClient(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
 
+module.exports.doExcel = async (req, res) => {
+
+
+    try {
+
+
+        const workBook = XLSX.utils.book_new();
+        const ids = req.query.ids.split(',')
+        console.log(ids)
+        await client.connect();
+        // Select the database
+        const db = client.db('Real_Estate');
+
+        // Select the collection
+        const collection = db.collection('BI');
+        // Perform a query 
+        const properties = []
+        const rows = await collection.find().toArray();
+        if (rows.length) {
+            // Your logic goes here. 
+
+            rows.forEach((row, index) => {
+                console.log(row['Postal Code'])
+
+                const current_zip = `${row['Postal Code']}`
+                if (ids.includes(current_zip)) {
+
+                    properties.push(row)
+                }
+
+            });
+            console.log(properties)
+        }
+
+        const workSheet = XLSX.utils.json_to_sheet(properties);
+        XLSX.utils.book_append_sheet(workBook, workSheet, "orders")
+        // Generate buffer
+        const date = new Date();
+        month = date.getMonth() + 1
+        day = date.getDate()
+        year = date.getFullYear()
+
+        file_num = Math.floor(1000 + Math.random() * 9000);
+        const filename = `${day}_${month}_${year}--${file_num}.xlsx`;
+        // Create a new workbook options object
+        const wb_opts = { bookType: "xlsx", type: "buffer" };
+
+        // Write the workbook to a buffer
+        const xl_file = XLSX.write(workBook, wb_opts);
+
+        // Set the Content-Type and Content-Disposition headers and send the buffer as the response
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+        res.send(xl_file);
+        fs.unlink(filename, err => {
+            if (err) {
+                console.error(err);
+            }
+        });
+
+        // res.sendFile(xl_file);
+        res.download(`${filename}`)
+
+    } catch (e) {
+        console.log(e)
+        req.flash('Refresca la Pagina e Intenta de Nuevo')
+        res.redirect('/')
+    }
+}
+
 module.exports.zipSegSum = async (req, res) => {
     console.log('zipSegSum');
 
@@ -40,7 +110,6 @@ module.exports.zipSegSum = async (req, res) => {
 
     // Select the collection
     const collection = db.collection('BI');
-    console.log(collection)
     // Perform a query 
 
     try {
@@ -49,6 +118,7 @@ module.exports.zipSegSum = async (req, res) => {
         const rows = await collection.find().toArray();
         console.log(rows)
         const reqd_zips = req.query.zip
+        const ids = []
         if (rows.length) {
             const closing_data = [];
             var zips = [];
@@ -70,7 +140,7 @@ module.exports.zipSegSum = async (req, res) => {
                 }
                 if (!zips.includes(row['Postal Code'])) {
                     zips.push(row['Postal Code']);
-                }
+                } ids.push(row['_id'])
             });
 
             closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
@@ -99,7 +169,7 @@ module.exports.zipSegSum = async (req, res) => {
             console.log("Segments:", segments);
             console.log("Sums:", sums);
             const name = `Value Summation of Homes Sold Every 15 Days in: ${reqd_zips}`;
-            res.render('users/render_sum', { segments, sums, name, zips });
+            res.render('users/render_sum_zip', { segments, sums, name, zips, reqd_zips });
         }
 
 
@@ -125,6 +195,7 @@ module.exports.renderSegSum = async (req, res) => {
         console.log('preRows')
         const rows = await collection.find().toArray();
         console.log(rows)
+        const ids = []
         if (rows.length) {
             // Your logic goes here...
             const closing_data = [];
@@ -141,7 +212,9 @@ module.exports.renderSegSum = async (req, res) => {
                     zips.push(row['Postal Code']);
                 }
                 closing_data.push(data);
+                ids.push(row['_id'])
             });
+
             closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
 
             let closingDates = closing_data.map(property => new Date(property.closing_date));
@@ -191,6 +264,7 @@ module.exports.renderZipPrices = async (req, res) => {
         console.log('preRows')
         const rows = await collection.find().toArray();
         const reqd_zips = req.query.zip
+        const ids = []
         if (rows.length) {
             const closing_data = [];
             var zips = [];
@@ -199,10 +273,13 @@ module.exports.renderZipPrices = async (req, res) => {
                 const current_zip = `${row['Postal Code']}`
 
                 if (reqd_zips.includes(current_zip)) {
+
+                    ids.push(row['_id'])
                     console.log('in')
                     let existingEntr = closing_data.find(entry => entry.closing_date === row['Close Date']);
                     if (existingEntr) {
                         existingEntr.closing_price += parseFloat(row['Close Price']);
+
                     } else {
                         let data = {
                             closing_date: row['Close Date'],
@@ -224,12 +301,9 @@ module.exports.renderZipPrices = async (req, res) => {
                 closing_price.push(property.closing_price);
                 closing_date.push(property.closing_date);
             });
-
-            console.log(closing_data);
-            console.log(closing_price);
-            console.log(closing_date);
+            console.log(ids)
             const name = `Total Daily Sales Volume of Homes 1M+  in the Following Zip Codes: ${reqd_zips}`;
-            res.render('users/dates_prices', { closing_date, closing_price, name, zips });
+            res.render('users/dates_prices_zip', { closing_date, closing_price, name, zips, ids, reqd_zips });
         }
     } catch (e) {
         console.log(e);
@@ -253,6 +327,7 @@ module.exports.printCSV = async (req, res) => {
         console.log('preRows')
         const rows = await collection.find().toArray();
         console.log(rows)
+        const ids = []
         if (rows.length) {
             const closing_data = [];
             var zips = [];
@@ -262,16 +337,19 @@ module.exports.printCSV = async (req, res) => {
                 let existingEntry = closing_data.find(entry => entry.closing_date === row['Close Date']);
                 if (existingEntry) {
                     existingEntry.closing_price += parseFloat(row['Close Price']);
+
                 } else {
                     let data = {
                         closing_date: row['Close Date'],
                         postal_code: row['Postal Code'],
-                        closing_price: parseFloat(row['Close Price'])
+                        closing_price: parseFloat(row['Close Price']),
+
                     };
                     closing_data.push(data);
                 } if (!zips.includes(row['Postal Code'])) {
                     zips.push(row['Postal Code']);
                 }
+                ids.push(row['_id'])
             });
             closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
             const closing_date = [];
@@ -280,9 +358,9 @@ module.exports.printCSV = async (req, res) => {
                 closing_price.push(property.closing_price);
                 closing_date.push(property.closing_date);
             });
-            console.log(closing_data)
+            console.log(ids)
             const name = 'Total Daily Sales Volume of Closed Homes 1M+';
-            res.render('users/dates_prices', { closing_date, closing_price, name, zips });
+            res.render('users/dates_prices', { closing_date, closing_price, name, zips, ids });
         }
 
     } catch (err) {
@@ -304,7 +382,7 @@ module.exports.renderCount = async (req, res) => {
     // Perform a query 
 
     try {
-
+        const ids = []
         console.log('preRows')
         const rows = await collection.find().toArray();
         console.log(rows)
@@ -323,6 +401,7 @@ module.exports.renderCount = async (req, res) => {
                     zips.push(row['Postal Code']);
                 }
                 closing_data.push(data)
+                ids.push(row['_id'])
             });
             closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
             let closingDates = closing_data.map(property => new Date(property.closing_date));
@@ -347,7 +426,7 @@ module.exports.renderCount = async (req, res) => {
             console.log("Segments:", segments);
             console.log("Counts:", counts);
             const name = 'Homes Over 1M+ Closed Every 15 Days'
-            res.render('users/render_count', { segments, counts, name, zips })
+            res.render('users/render_count', { segments, counts, name, zips, ids })
         }
     } catch (e) {
         console.log(e)
@@ -366,6 +445,7 @@ module.exports.renderZipCount = async (req, res) => {
     // Perform a query 
 
     try {
+        const ids = []
 
         console.log('preRows')
         const rows = await collection.find().toArray();
@@ -382,7 +462,8 @@ module.exports.renderZipCount = async (req, res) => {
                     let data = {
                         closing_date: row['Close Date'],
                         postal_code: row['Postal Code'],
-                        closing_price: row['Close Price']
+                        closing_price: row['Close Price'],
+                        id: row['_id']
                     }
 
                     closing_data.push(data)
@@ -390,6 +471,7 @@ module.exports.renderZipCount = async (req, res) => {
                 if (!zips.includes(row['Postal Code'])) {
                     zips.push(row['Postal Code']);
                 }
+                ids.push(row['_id'])
             });
             closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
             let closingDates = closing_data.map(property => new Date(property.closing_date));
@@ -415,7 +497,8 @@ module.exports.renderZipCount = async (req, res) => {
             console.log("Segments:", segments);
             console.log("Counts:", counts);
             const name = `Number of Homes Over 1M+ Closed in: ${reqd_zips}`
-            res.render('users/render_count', { segments, counts, name, zips })
+            console.log(ids)
+            res.render('users/render_count_zip', { segments, counts, name, zips, ids, reqd_zips })
         }
     } catch (e) {
         console.log(e)
