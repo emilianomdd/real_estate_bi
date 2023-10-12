@@ -1,27 +1,63 @@
 <% layout('layouts/boilerplate')%>
 
-
-    <div class="container">
-        <div class="row">
-            <div class="col-8">
+    <div style="max-width: 960px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 40px;">
+            <div style="flex: 0 0 65%; padding: 15px;">
                 <canvas id="myChart"></canvas>
             </div>
-            <div class="mt-6 col-4">
-                <form action="/render_zip_sum">
-                    <label for="zip">Look up a specific Zip Codes:</label>
-                    <% for (let zip of zips){ %>
-                        <input type="checkbox" id="<%=zip%>" name="zip" value="<%=zip%>">
-                        <label for="<%=zip%>">
-                            <%=zip%>
-                        </label>
-                        <%}%>
-                            <button>submit</button>
-                </form>
+            <div style="flex: 0 0 30%;">
+                <!-- ZIP Code Dropdown -->
+                <div class="form-container my-3 p-3 bg-light rounded">
+                    <form action="/render_zip_sum">
+                        <div class="dropdown mb-3">
+                            <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Select Zip Codes
+                            </button>
+                            <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
+                                <% for (let zip of zips) { %>
+                                    <div class="d-flex align-items-center px-3">
+                                        <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
+                                        <label for="<%=zip%>">
+                                            <%=zip%>
+                                        </label>
+                                    </div>
+                                    <% } %>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Submit</button>
+                    </form>
+                </div>
+                <div style="background-color: #f8f8f8; padding: 20px; border-radius: 5px;">
+                    <form action="/render_sum_specs">
+                        <fieldset class="mb-3 p-2 border rounded">
+                            <legend class="fs-5">Pool Spec:</legend>
+                            <label><input type="radio" name="pool" value="yes"> Yes</label>
+                            <label><input type="radio" name="pool" value="no"> No</label>
+                        </fieldset>
+    
+                        <fieldset class="mb-3 p-2 border rounded">
+                            <legend class="fs-5">Price Range:</legend>
+                            <label><input type="radio" name="price_range" value="1.2"> 1.2 - 1.4M</label>
+                            <label><input type="radio" name="price_range" value="1.7"> 1.7 - 2.1M</label>
+                            <label><input type="radio" name="price_range" value="2.7"> 2.7 - 3.5M</label>
+                        </fieldset>
+    
+                        <fieldset class="mb-3 p-2 border rounded">
+                            <legend class="fs-5">Number of Garage Spaces:</legend>
+                            <label><input type="radio" name="garage_spaces" value="0"> 0</label>
+                            <label><input type="radio" name="garage_spaces" value="1"> 1</label>
+                            <label><input type="radio" name="garage_spaces" value="2"> 2</label>
+                        </fieldset>
+    
+                        <button type="submit"
+                            style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Submit</button>
+                    </form>
+                </div>
             </div>
-
-
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         var volumes = <%- JSON.stringify(sums) %>;
@@ -39,6 +75,5 @@
                     borderWidth: 1
                 }]
             }
-
         });
     </script>

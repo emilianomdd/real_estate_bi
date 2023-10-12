@@ -1,56 +1,99 @@
+<% layout('layouts/boilerplate') %>
 
-
-<% layout('layouts/boilerplate')%>
-
-
-<div class="container">
-    <div class="row">
-        <div class="col-8">
-            <canvas id="myChart"></canvas>
-        </div>
-        <div class="mt-6 col-4">
-            <form action="/render_zip_count">
-                <label for="zip">Look up a specific Zip Codes:</label>
-                <% for (let zip of zips){ %>
-                    <input type="checkbox" id="<%=zip%>" name="zip" value="<%=zip%>">
-                    <label for="<%=zip%>"><%=zip%></label>
-                <%}%>
-                <button>submit</button>
-            </form>
-        </div>
-        
-        <div class="row">
-            <div class="col-8">
-                <canvas id="myChart"></canvas>
+    <div style="max-width: 960px; margin: 0 auto; padding: 20px;">
+        <!-- First Row -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+            <div style="flex: 0 0 65%; padding: 15px;">
+                <canvas id="myChart1"></canvas>
             </div>
-            <div class="mt-6 col-4">
+            <div style="flex: 0 0 30%; background-color: #f8f8f8; padding: 15px; border-radius: 5px;">
+                <!-- Zip Dropdown -->
+                <!-- Zip Dropdown -->
+                <form action="/render_zip_count" style="margin-bottom: 20px;">
+                    <label for="zipDropdown" style="font-weight: bold;">Look up specific Zip Codes:</label><br>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Select Zip Codes
+                        </button>
+                        <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
+                            <% for (let zip of zips){ %>
+                                <div class="d-flex align-items-center px-3">
+                                    <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
+                                    <label for="<%=zip%>">
+                                        <%=zip%>
+                                    </label>
+                                </div>
+                                <%}%>
+                        </div>
+                    </div>
+                    <button type="submit"
+                        style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px; margin-top: 10px;">Submit</button>
+                </form>
+                <!-- Additional Filters -->
+                <form action="/render_zip_count_specs" style="margin-bottom: 20px;">
+                    <input type="hidden" name="zip" id="zip" value="<%=reqd_zips%>">
+                    <fieldset class="mb-3 p-2 border rounded">
+                        <legend class="fs-5">Pool Spec:</legend>
+                        <label><input type="radio" name="pool" value="yes"> Yes</label>
+                        <label><input type="radio" name="pool" value="no"> No</label>
+                    </fieldset>
+
+                    <fieldset class="mb-3 p-2 border rounded">
+                        <legend class="fs-5">Price Range:</legend>
+                        <label><input type="radio" name="price_range" value="1.2"> 1.2 - 1.4M</label>
+                        <label><input type="radio" name="price_range" value="1.7"> 1.7 - 2.1M</label>
+                        <label><input type="radio" name="price_range" value="2.7"> 2.7 - 3.5M</label>
+                    </fieldset>
+
+                    <fieldset class="mb-3 p-2 border rounded">
+                        <legend class="fs-5">Number of Garage Spaces:</legend>
+                        <label><input type="radio" name="garage_spaces" value="0"> 0</label>
+                        <label><input type="radio" name="garage_spaces" value="1"> 1</label>
+                        <label><input type="radio" name="garage_spaces" value="2"> 2</label>
+                    </fieldset>
+
+                    <button type="submit"
+                        style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px;">Submit</button>
+                </form>
+
+                <!-- Excel Button -->
                 <form action="/do_excel">
                     <input type="hidden" id="ids" name="ids" value="<%=reqd_zips%>">
-        
-                    <button>Create Excel With Properties in Graph</button>
+                    <button type="submit"
+                        style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Create
+                        Excel With Properties in Graph</button>
                 </form>
             </div>
-        
         </div>
+
+        <!-- Second Row -->
+        <div style="margin-bottom: 40px;">
+            <div style="flex: 0 0 65%; padding: 15px;">
+                <canvas id="myChart2"></canvas>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            var volumes = <%- JSON.stringify(counts) %>;
+            var name = <%- JSON.stringify(name) %>;
+            var dates = <%- JSON.stringify(segments) %>;
+
+            const ctx1 = document.getElementById('myChart1');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: `${name}`,
+                        data: volumes,
+                        borderWidth: 1
+                    }]
+                }
+            });
+
+            const ctx2 = document.getElementById('myChart2');
+        // Add another chart initialization here if needed
+        </script>
     </div>
-</div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script> 
-        var volumes = <%- JSON.stringify(counts) %>;
-        var name = <%- JSON.stringify(name) %>;
-        var dates = <%- JSON.stringify(segments) %>;
-        const ctx = document.getElementById('myChart');
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: dates,
-                datasets: [{
-                    label: `${name}`,
-                    data: volumes,
-                    borderWidth: 1
-                }]
-            }
-
-        });
-    </script>

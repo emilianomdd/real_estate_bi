@@ -1,15 +1,15 @@
 <% layout('layouts/boilerplate') %>
 
-    <div class="container-fluid mt-4">
-        <div class="row mb-4">
-            <!-- Left Area - Graph Display -->
-            <div class="col-lg-9">
-                <canvas id="myChart1"></canvas>
+    <div class="container" style="max-width: 960px; margin: 0 auto;">
+
+        <div class="row" style="display: flex; flex-wrap: wrap;">
+
+            <div class="col-8" style="padding: 15px;">
+                <canvas id="myChart"></canvas>
             </div>
 
-            <!-- Right Sidebar - Form Inputs -->
-            <div class="col-lg-3">
-                <!-- Zip Codes Selection Form -->
+            <div class="col-4" style="padding: 15px;">
+
                 <div class="form-container my-3 p-3 bg-light rounded">
                     <form action="/render_zip_prices">
                         <div class="dropdown mb-3">
@@ -19,10 +19,9 @@
                             </button>
                             <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
                                 <% for (let zip of zips) { %>
-                                    <div class="form-check px-3">
-                                        <input type="checkbox" class="form-check-input" id="<%=zip%>" name="zip"
-                                            value="<%=zip%>">
-                                        <label class="form-check-label" for="<%=zip%>">
+                                    <div class="d-flex align-items-center px-3">
+                                        <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
+                                        <label for="<%=zip%>">
                                             <%=zip%>
                                         </label>
                                     </div>
@@ -33,58 +32,65 @@
                     </form>
                 </div>
 
-                <!-- Price Specs Form -->
-                <div class="form-container my-3 p-3 bg-light rounded">
-                    <form action="/render_zip_price_specs">
-                        <input type="hidden" name="zip" id="zip" value="<%=reqd_zips%>">
-                        <fieldset class="mb-3 p-2 border rounded">
-                            <legend class="fs-5">Pool Spec:</legend>
+                <div class="form-container mt-6"
+                    style="background-color: #f8f8f8; padding: 15px; border-radius: 5px; margin-top: 36px;">
+                    <form action="/render_prices_specs">
+                        <fieldset
+                            style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <legend style="font-size: 1.2em;">Pool Spec:</legend>
                             <label><input type="radio" name="pool" value="yes"> Yes</label>
                             <label><input type="radio" name="pool" value="no"> No</label>
                         </fieldset>
-    
-                        <fieldset class="mb-3 p-2 border rounded">
-                            <legend class="fs-5">Price Range:</legend>
+
+                        <fieldset
+                            style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <legend style="font-size: 1.2em;">Price Range:</legend>
                             <label><input type="radio" name="price_range" value="1.2"> 1.2 - 1.4M</label>
                             <label><input type="radio" name="price_range" value="1.7"> 1.7 - 2.1M</label>
                             <label><input type="radio" name="price_range" value="2.7"> 2.7 - 3.5M</label>
                         </fieldset>
-    
-                        <fieldset class="mb-3 p-2 border rounded">
-                            <legend class="fs-5">Number of Garage Spaces:</legend>
+
+                        <fieldset
+                            style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <legend style="font-size: 1.2em;">Number of Garage Spaces:</legend>
                             <label><input type="radio" name="garage_spaces" value="0"> 0</label>
                             <label><input type="radio" name="garage_spaces" value="1"> 1</label>
                             <label><input type="radio" name="garage_spaces" value="2"> 2</label>
                         </fieldset>
-    
-                        <button type="submit" class="btn btn-success w-100">Submit</button>
+
+                        <button type="submit"
+                            style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px;">Submit</button>
                     </form>
                 </div>
 
-                <!-- Create Excel Button -->
-                <div class="p-3 bg-light rounded">
-                    <form action="/do_excel">
-                        <input type="hidden" id="ids" name="ids" value="<%=reqd_zips%>">
-                        <button type="submit" class="btn btn-success w-100">Create Excel With Properties in
-                            Graph</button>
-                    </form>
-                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <div>
+        <div style="display: flex; justify-content: space-between;">
+            <div style="flex: 0 0 65%; padding: 15px;">
+                <canvas id="myChart2"></canvas>
+            </div>
+            <div style="flex: 0 0 30%; background-color: #f8f8f8; padding: 20px; border-radius: 5px;">
+                <form action="/do_excel_specs_only"> 
+                    <input type="hidden" name="specs" id="specs" value="<%=JSON.stringify(specs, null, 2)%>">
+                    <button type="submit"
+                        style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Create
+                        Excel With Properties in Graph</button>
+                </form>
             </div>
         </div>
     </div>
-
-    <!-- JavaScript & ChartJS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>
         var volumes = <%- JSON.stringify(closing_price) %>;
         var name = <%- JSON.stringify(name) %>;
         var dates = <%- JSON.stringify(closing_date) %>;
+        const ctx = document.getElementById('myChart');
 
-        const ctx1 = document.getElementById('myChart1');
-        new Chart(ctx1, {
+        new Chart(ctx, {
             type: 'line',
             data: {
                 labels: dates,
@@ -94,5 +100,6 @@
                     borderWidth: 1
                 }]
             }
+
         });
     </script>

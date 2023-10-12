@@ -1,36 +1,32 @@
 <% layout('layouts/boilerplate') %>
 
 <div style="max-width: 960px; margin: 0 auto; padding: 20px;">
-    <!-- Row -->
-    <div style="display: flex; justify-content: space-between;">
-        <!-- Graph -->
+    <!-- First Row -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
         <div style="flex: 0 0 65%; padding: 15px;">
             <canvas id="myChart1"></canvas>
         </div>
-
         <div style="flex: 0 0 30%; background-color: #f8f8f8; padding: 20px; border-radius: 5px;">
-            <!-- Zip Dropdown -->
-            <form action="/render_zip_count">
-                <label for="zipDropdown" style="font-weight: bold;">Look up specific Zip Codes:</label><br>
-                <div class="dropdown">
+            <!-- ZIP Dropdown -->
+            <form action="/render_zip_sum">
+                <div class="dropdown mb-3">
                     <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Select Zip Codes
                     </button>
                     <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
-                        <% for (let zip of zips){ %>
+                        <% for (let zip of zips) { %>
                             <div class="d-flex align-items-center px-3">
                                 <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
                                 <label for="<%=zip%>"><%=zip%></label>
                             </div>
-                        <%}%>
+                        <% } %>
                     </div>
                 </div>
-                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">Submit</button>
+                <button type="submit" class="btn btn-success w-100">Submit</button>
             </form>
             
-            <!-- Specs Filters -->
-            <form action="/render_count_specs" style="margin-top: 20px;"> 
-                <!-- Pool -->
+            <!-- Specs Form -->
+            <form action="/render_sum_specs" style="margin-top: 20px;">
                 <fieldset class="mb-3 p-2 border rounded">
                     <legend class="fs-5">Pool Spec:</legend>
                     <label><input type="radio" name="pool" value="yes"> Yes</label>
@@ -51,22 +47,24 @@
                     <label><input type="radio" name="garage_spaces" value="2"> 2</label>
                 </fieldset>
 
-                <!-- Submit Button -->
-                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px; margin-top: 10px;">Submit</button>
+                <button type="submit" class="btn btn-success w-100">Submit</button>
+            </form>
+
+            <!-- Excel Export Form -->
+            <form action="/do_excel_specs_only" style="margin-top: 20px;">
+                <input type="hidden" name="specs" id="specs" value="<%=JSON.stringify(specs, null, 2)%>">
+                <button type="submit" class="btn btn-success w-100">Create Excel With Properties in Graph</button>
             </form>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
 <script>
-    var volumes = <%- JSON.stringify(counts) %>;
+    var volumes = <%- JSON.stringify(sums) %>;
     var name = <%- JSON.stringify(name) %>;
     var dates = <%- JSON.stringify(segments) %>;
-    
+
     const ctx1 = document.getElementById('myChart1');
     new Chart(ctx1, {
         type: 'line',
@@ -79,6 +77,4 @@
             }]
         }
     });
-
-    // Add another chart initialization here if needed
 </script>

@@ -31,6 +31,981 @@ const MongoDBStore = require("connect-mongo")(session);
 const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp';
 const client = new MongoClient(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
 
+
+
+
+module.exports.sumSpecs = async (req, res) => {
+    console.log('sumSpecs')
+    console.log(req.query)
+    await client.connect();
+    const db = client.db('Real_Estate');
+    const collection = db.collection('BI');
+    const specs = req.query
+
+    var range = [0, 0]
+    if (specs.price_range == '1.2') {
+        range[0] = 1200000
+        range[1] = 1400000
+    }
+    if (specs.price_range == '1.7') {
+        range[0] = 1700000
+        range[1] = 2100000
+    }
+    if (specs.price_range == '2.7') {
+        range[0] = 2700000
+        range[1] = 3500000
+    }
+    try {
+        const rows = await collection.find().toArray();
+        const reqd_zips = req.query.zip
+        const ids = []
+        const zips_array = []
+        if (rows.length) {
+
+            const closing_data = [];
+            var zips = [];
+            const first_array = []
+            const second_array = []
+            const third_array = []
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (specs.pool) {
+                    if (specs.pool == 'no') {
+                        if (row['Pool Features'] == 'None') {
+                            first_array.push(row)
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
+                        }
+
+                    }
+                    else {
+                        first_array.push(row);
+                    }
+                }
+
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+
+
+                }
+
+            } else {
+                second_array = first_array
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            } else {
+                third_array = second_array
+            }
+            third_array.forEach((row, index) => {
+                let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntr) {
+                    existingEntr.closing_price += parseFloat(row['Close Price']);
+
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    }
+                    zips_array.push(data);
+                }
+            });
+
+
+
+            zips_array.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+
+            let closingDates = zips_array.map(property => new Date(property.closing_date));
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+            let segments = [];
+            let sums = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+                let sum = zips_array
+                    .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
+                    .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
+
+                segments.push(startDate);
+                sums.push(sum);
+
+                startDate = segmentEnd;
+            }
+
+            console.log("Segments:", segments);
+            console.log("Sums:", sums);
+            console.log(zips)
+            const name = `Value Summation of 1M+ Homes Closed Every 15 Days with the following specs: ${specs}`;
+            res.render('users/render_only_sum_specs', { segments, sums, name, zips, reqd_zips, specs });
+        }
+
+    } catch (e) {
+        console.log(e);
+    }
+
+}
+module.exports.zipSumSpecs = async (req, res) => {
+    console.log('renderSegSum');
+    console.log(req.query)
+    await client.connect();
+    const db = client.db('Real_Estate');
+    const collection = db.collection('BI');
+    const specs = req.query
+
+    var range = [0, 0]
+    if (specs.price_range == '1.2') {
+        range[0] = 1200000
+        range[1] = 1400000
+    }
+    if (specs.price_range == '1.7') {
+        range[0] = 1700000
+        range[1] = 2100000
+    }
+    if (specs.price_range == '2.7') {
+        range[0] = 2700000
+        range[1] = 3500000
+    }
+    try {
+        const rows = await collection.find().toArray();
+        const reqd_zips = req.query.zip
+        const ids = []
+        const zips_array = []
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
+            const first_array = []
+            var second_array = []
+            var third_array = []
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (reqd_zips.includes(current_zip)) {
+                    if (specs.pool) {
+                        if (specs.pool == 'no') {
+                            if (row['Pool Features'] == 'None') {
+                                first_array.push(row)
+                            } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                                first_array.push(row)
+                            }
+
+                        }
+
+                    } else {
+                        first_array.push(row);
+                    }
+                }
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+
+
+                }
+
+            } else {
+                second_array = first_array
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            } else {
+                third_array = second_array
+            }
+            third_array.forEach((row, index) => {
+                let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntr) {
+                    existingEntr.closing_price += parseFloat(row['Close Price']);
+
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    }
+                    zips_array.push(data);
+                }
+            });
+
+
+
+            zips_array.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+
+            let closingDates = zips_array.map(property => new Date(property.closing_date));
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+            let segments = [];
+            let sums = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+
+                let sum = zips_array
+                    .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
+                    .reduce((acc, property) => acc + parseFloat(property.closing_price), 0);
+
+                segments.push(startDate);
+                sums.push(sum);
+
+                startDate = segmentEnd;
+            }
+
+            console.log("Segments:", segments);
+            console.log("Sums:", sums);
+            console.log(zips)
+            const name = `Value Summation of 1M+ Homes Closed Every 15 Days in the following zip code: ${reqd_zips} and with the following specs: ${specs}`;
+            res.render('users/render_sum_specs', { segments, sums, name, zips, reqd_zips, specs });
+        }
+
+    } catch (e) {
+        console.log(e);
+    }
+
+};
+module.exports.zipPriceSpecs = async (req, res) => {
+    console.log('zipPricesSpecs')
+    console.log(req.query)
+    await client.connect();
+    const db = client.db('Real_Estate');
+    const collection = db.collection('BI');
+    const specs = req.query
+
+    var range = [0, 0]
+    if (specs.price_range == '1.2') {
+        range[0] = 1200000
+        range[1] = 1400000
+    }
+    if (specs.price_range == '1.7') {
+        range[0] = 1700000
+        range[1] = 2100000
+    }
+    if (specs.price_range == '2.7') {
+        range[0] = 2700000
+        range[1] = 3500000
+    }
+    try {
+        const rows = await collection.find().toArray();
+        const reqd_zips = req.query.zip
+        const ids = []
+        const zips_array = []
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
+            const first_array = []
+            const second_array = []
+            const third_array = []
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (reqd_zips.includes(current_zip)) {
+                    if (specs.pool) {
+                        if (specs.pool == 'no') {
+                            if (row['Pool Features'] == 'None') {
+                                first_array.push(row)
+                            } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                                first_array.push(row)
+                            }
+
+                        }
+                        else {
+                            first_array.push(row);
+                        }
+                    }
+                }
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+                }
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            }
+            third_array.forEach((row, index) => {
+                let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntr) {
+                    existingEntr.closing_price += parseFloat(row['Close Price']);
+
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    }
+                    zips_array.push(data);
+                }
+            });
+
+
+
+            zips_array.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            const closing_date = [];
+            const closing_price = [];
+            zips_array.forEach(property => {
+                closing_price.push(property.closing_price);
+                closing_date.push(property.closing_date);
+            });
+            console.log(zips_array)
+            const name = `Daily transaction volume of homes in the following zip code: ${reqd_zips} with the following specs: ${specs}`
+            res.render('users/dates_prices_specs', { closing_date, closing_price, name, zips, ids, reqd_zips, specs });
+
+        }
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+
+// closing_data.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+// const closing_date = [];
+// const closing_price = [];
+// closing_data.forEach(property => {
+//     closing_price.push(property.closing_price);
+//     closing_date.push(property.closing_date);
+// });
+// console.log(ids)
+// const name = `Total Daily Sales Volume of Homes 1M+  in the Following Zip Codes: ${reqd_zips}`;
+// res.render('users/dates_prices_zip', { closing_date, closing_price, name, zips, ids, reqd_zips });
+
+
+
+
+module.exports.zipCountSpecs = async (req, res) => {
+    console.log('zipCountSpecs')
+    console.log(req.query)
+    await client.connect();
+    const db = client.db('Real_Estate');
+    const collection = db.collection('BI');
+    const specs = req.query
+
+    var range = [0, 0]
+    if (specs.price_range == '1.2') {
+        range[0] = 1200000
+        range[1] = 1400000
+    }
+    if (specs.price_range == '1.7') {
+        range[0] = 1700000
+        range[1] = 2100000
+    }
+    if (specs.price_range == '2.7') {
+        range[0] = 2700000
+        range[1] = 3500000
+    }
+    try {
+        const rows = await collection.find().toArray();
+        const reqd_zips = req.query.zip
+        const ids = []
+        const zips_array = []
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
+            const first_array = []
+            var second_array = []
+            var third_array = []
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (reqd_zips.includes(current_zip)) {
+                    if (specs.pool) {
+                        if (specs.pool == 'no') {
+                            if (row['Pool Features'] == 'None') {
+                                first_array.push(row)
+                            } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                                first_array.push(row)
+                            }
+
+                        }
+
+                    } else {
+                        first_array.push(row);
+                    }
+                }
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+
+
+                }
+
+            } else {
+                second_array = first_array
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            } else {
+                third_array = second_array
+            }
+            third_array.forEach((row, index) => {
+                let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntr) {
+                    existingEntr.closing_price += parseFloat(row['Close Price']);
+
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    }
+                    zips_array.push(data);
+                }
+            });
+
+
+
+            zips_array.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            let closingDates = zips_array.map(property => new Date(property.closing_date));
+
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+
+            let segments = [];
+            let counts = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
+
+                segments.push(startDate);
+                counts.push(count);
+
+                startDate = segmentEnd;
+            }
+
+            console.log("Segments:", segments);
+            console.log("Counts:", counts);
+            const name = `Value Summation of 1M+ Homes Closed Every 15 Days in the following zip code: ${reqd_zips} and with the following specs: ${specs}`;
+            res.render('users/render_count_specs', { segments, counts, name, zips, reqd_zips, specs });
+        }
+
+    } catch (e) {
+        console.log(e);
+    }
+
+}
+module.exports.countSpecs = async (req, res) => {
+    console.log('countSpecs')
+    console.log(req.query)
+    await client.connect();
+    const db = client.db('Real_Estate');
+    const collection = db.collection('BI');
+    const specs = req.query
+
+    var range = [0, 0]
+    if (specs.price_range == '1.2') {
+        range[0] = 1200000
+        range[1] = 1400000
+    }
+    if (specs.price_range == '1.7') {
+        range[0] = 1700000
+        range[1] = 2100000
+    }
+    if (specs.price_range == '2.7') {
+        range[0] = 2700000
+        range[1] = 3500000
+    }
+    try {
+        const rows = await collection.find().toArray();
+        const reqd_zips = req.query.zip
+        const ids = []
+        const zips_array = []
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
+            const first_array = []
+            var second_array = []
+            var third_array = []
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (specs.pool) {
+                    if (specs.pool == 'no') {
+                        if (row['Pool Features'] == 'None') {
+                            first_array.push(row)
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
+                        }
+
+                    }
+                    else {
+                        first_array.push(row);
+                    }
+                }
+
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+
+
+                }
+
+            } else {
+                second_array = first_array
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            } else {
+                third_array = second_array
+            }
+            third_array.forEach((row, index) => {
+                let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntr) {
+                    existingEntr.closing_price += parseFloat(row['Close Price']);
+
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    }
+                    zips_array.push(data);
+                }
+            });
+
+
+
+            zips_array.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            let closingDates = zips_array.map(property => new Date(property.closing_date));
+
+            let startDate = closingDates[0];
+            let endDate = closingDates[closingDates.length - 1];
+
+            let segments = [];
+            let counts = [];
+
+            while (startDate <= endDate) {
+                let segmentEnd = new Date(startDate);
+                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
+
+                segments.push(startDate);
+                counts.push(count);
+
+                startDate = segmentEnd;
+            }
+
+            console.log("Segments:", segments);
+            console.log("Counts:", counts);
+            const name = `Value Summation of 1M+ Homes Closed Every 15 Days with the following specs: ${specs}`;
+            res.render('users/render_count_only_specs', { segments, counts, name, zips, reqd_zips, specs });
+
+
+        }
+    } catch (e) {
+        console.log(e);
+    }
+}
+module.exports.priceSpecs = async (req, res) => {
+    console.log('priceSpecs')
+    console.log(req.query)
+    await client.connect();
+    const db = client.db('Real_Estate');
+    const collection = db.collection('BI');
+    const specs = req.query
+
+    var range = [0, 0]
+    if (specs.price_range == '1.2') {
+        range[0] = 1200000
+        range[1] = 1400000
+    }
+    if (specs.price_range == '1.7') {
+        range[0] = 1700000
+        range[1] = 2100000
+    }
+    if (specs.price_range == '2.7') {
+        range[0] = 2700000
+        range[1] = 3500000
+    }
+    try {
+        const rows = await collection.find().toArray();
+        const reqd_zips = req.query.zip
+        const ids = []
+        const zips_array = []
+        if (rows.length) {
+            const closing_data = [];
+            var zips = [];
+            const first_array = []
+            const second_array = []
+            const third_array = []
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (specs.pool) {
+                    if (specs.pool == 'no') {
+                        if (row['Pool Features'] == 'None') {
+                            first_array.push(row)
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
+                        }
+
+                    }
+                    else {
+                        first_array.push(row);
+                    }
+                }
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+                }
+            } else {
+                second_array = first_array
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            } else {
+                third_array = second_array
+            }
+            third_array.forEach((row, index) => {
+                let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
+                if (existingEntr) {
+                    existingEntr.closing_price += parseFloat(row['Close Price']);
+
+                } else {
+                    let data = {
+                        closing_date: row['Close Date'],
+                        postal_code: row['Postal Code'],
+                        closing_price: parseFloat(row['Close Price'])
+                    }
+                    zips_array.push(data);
+                }
+            });
+
+
+
+            zips_array.sort((a, b) => new Date(a.closing_date) - new Date(b.closing_date));
+            const closing_date = [];
+            const closing_price = [];
+            zips_array.forEach(property => {
+                closing_price.push(property.closing_price);
+                closing_date.push(property.closing_date);
+            });
+            console.log(zips_array)
+            const name = `Daily transaction volume of homes with the following specs: ${specs}`
+            res.render('users/dates_only_prices_specs', { closing_date, closing_price, name, zips, ids, reqd_zips, specs });
+
+        }
+    } catch (e) {
+        console.log(e);
+    }
+}
+module.exports.doExcelSpecs = async (req, res) => {
+
+
+    try {
+
+
+        const workBook = XLSX.utils.book_new();
+        const specs = JSON.parse(req.query.specs)
+        await client.connect();
+        // Select the database
+        const db = client.db('Real_Estate');
+
+        // Select the collection
+        const collection = db.collection('BI');
+        // Perform a query 
+        var properties = []
+        var range = [0, 0]
+        if (specs.price_range == '1.2') {
+            range[0] = 1200000
+            range[1] = 1400000
+        }
+        if (specs.price_range == '1.7') {
+            range[0] = 1700000
+            range[1] = 2100000
+        }
+        if (specs.price_range == '2.7') {
+            range[0] = 2700000
+            range[1] = 3500000
+        }
+        const first_array = []
+        var second_array = []
+        var third_array = []
+        const zips = []
+        const rows = await collection.find().toArray();
+        console.log(specs)
+        if (rows.length) {
+            // Your logic goes here. 
+
+            rows.forEach((row, index) => {
+
+                const current_zip = `${row['Postal Code']}`
+                if (specs.pool) {
+                    if (specs.pool == 'no') {
+                        if (row['Pool Features'] == 'None') {
+                            first_array.push(row)
+                        }
+
+                    } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                        first_array.push(row)
+                    }
+
+                } else {
+                    first_array.push(row);
+                }
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+        }
+        if (specs.price_range) {
+            for (let row of first_array) {
+                if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                    second_array.push(row)
+                }
+
+
+            }
+
+        } else {
+            second_array = first_array
+        }
+
+
+        if (specs.garage_spaces) {
+            for (let row of second_array) {
+                if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                    third_array.push(row)
+                }
+            }
+        } else {
+            third_array = second_array
+        }
+        properties = third_array
+
+
+        console.log(properties)
+
+
+        const workSheet = XLSX.utils.json_to_sheet(properties);
+        XLSX.utils.book_append_sheet(workBook, workSheet, "orders")
+        // Generate buffer
+        const date = new Date();
+        month = date.getMonth() + 1
+        day = date.getDate()
+        year = date.getFullYear()
+
+        file_num = Math.floor(1000 + Math.random() * 9000);
+        const filename = `${day}_${month}_${year}--${file_num}.xlsx`;
+        // Create a new workbook options object
+        const wb_opts = { bookType: "xlsx", type: "buffer" };
+
+        // Write the workbook to a buffer
+        const xl_file = XLSX.write(workBook, wb_opts);
+
+        // Set the Content-Type and Content-Disposition headers and send the buffer as the response
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+        res.send(xl_file);
+        fs.unlink(filename, err => {
+            if (err) {
+                console.error(err);
+            }
+        });
+
+        // res.sendFile(xl_file);
+        res.download(`${filename}`)
+
+    } catch (e) {
+        console.log(e)
+        req.flash('Refresca la Pagina e Intenta de Nuevo')
+        res.redirect('/')
+    }
+}
+
+
+module.exports.doExcelZipSpecs = async (req, res) => {
+
+
+    try {
+
+        const reqd_zips = req.query.zip
+        console.log(reqd_zips)
+        const specs = JSON.parse(req.query.specs)
+
+        // Mostrar la cadena en la consola 
+        const workBook = XLSX.utils.book_new();
+        await client.connect();
+        // Select the database
+        const db = client.db('Real_Estate');
+
+        // Select the collection
+        const collection = db.collection('BI');
+        // Perform a query 
+        var properties = []
+        var range = [0, 0]
+        if (specs.price_range == '1.2') {
+            range[0] = 1200000
+            range[1] = 1400000
+        }
+        if (specs.price_range == '1.7') {
+            range[0] = 1700000
+            range[1] = 2100000
+        }
+        if (specs.price_range == '2.7') {
+            range[0] = 2700000
+            range[1] = 3500000
+        }
+        const zips = []
+        var first_array = []
+        var second_array = []
+        var third_array = []
+        const rows = await collection.find().toArray();
+        if (rows.length) {
+            // Your logic goes here. 
+
+            rows.forEach((row, index) => {
+                const current_zip = `${row['Postal Code']}`
+                if (reqd_zips.includes(current_zip)) {
+                    if (specs.pool) {
+                        if (specs.pool == 'no') {
+                            if (row['Pool Features'] == 'None') {
+                                first_array.push(row)
+                            }
+
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
+                        }
+
+                    } else {
+                        first_array.push(row);
+                    }
+                }
+                if (!zips.includes(current_zip)) {
+                    zips.push(current_zip)
+                }
+            });
+            if (specs.price_range) {
+                for (let row of first_array) {
+                    if (row['Close Price'] > range[0] && row['Close Price'] < range[1]) {
+                        second_array.push(row)
+                    }
+
+
+                }
+
+            } else {
+                second_array = first_array
+            }
+
+
+            if (specs.garage_spaces) {
+                for (let row of second_array) {
+                    if (row['# Garage Spaces'] == Number(specs.garage_spaces)) {
+                        third_array.push(row)
+                    }
+                }
+            } else {
+                third_array = second_array
+            }
+            properties = third_array
+            console.log(properties)
+        }
+
+        const workSheet = XLSX.utils.json_to_sheet(properties);
+        XLSX.utils.book_append_sheet(workBook, workSheet, "orders")
+        // Generate buffer
+        const date = new Date();
+        month = date.getMonth() + 1
+        day = date.getDate()
+        year = date.getFullYear()
+
+        file_num = Math.floor(1000 + Math.random() * 9000);
+        const filename = `${day}_${month}_${year}--${file_num}.xlsx`;
+        // Create a new workbook options object
+        const wb_opts = { bookType: "xlsx", type: "buffer" };
+
+        // Write the workbook to a buffer
+        const xl_file = XLSX.write(workBook, wb_opts);
+
+        // Set the Content-Type and Content-Disposition headers and send the buffer as the response
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+        res.send(xl_file);
+        fs.unlink(filename, err => {
+            if (err) {
+                console.error(err);
+            }
+        });
+
+        // res.sendFile(xl_file);
+        res.download(`${filename}`)
+
+    } catch (e) {
+        console.log(e)
+        req.flash('Refresca la Pagina e Intenta de Nuevo')
+        res.redirect('/')
+    }
+}
+
 module.exports.doExcel = async (req, res) => {
 
 
