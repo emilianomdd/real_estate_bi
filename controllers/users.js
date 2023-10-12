@@ -290,12 +290,11 @@ module.exports.zipSumSpecs = async (req, res) => {
 };
 module.exports.zipPriceSpecs = async (req, res) => {
     console.log('zipPricesSpecs')
-    console.log(req.query)
     await client.connect();
     const db = client.db('Real_Estate');
     const collection = db.collection('BI');
     const specs = req.query
-
+    console.log(specs)
     var range = [0, 0]
     if (specs.price_range == '1.2') {
         range[0] = 1200000
@@ -318,8 +317,8 @@ module.exports.zipPriceSpecs = async (req, res) => {
             const closing_data = [];
             var zips = [];
             const first_array = []
-            const second_array = []
-            const third_array = []
+            var second_array = []
+            var third_array = []
             rows.forEach((row, index) => {
                 const current_zip = `${row['Postal Code']}`
                 if (reqd_zips.includes(current_zip)) {
@@ -327,14 +326,15 @@ module.exports.zipPriceSpecs = async (req, res) => {
                         if (specs.pool == 'no') {
                             if (row['Pool Features'] == 'None') {
                                 first_array.push(row)
-                            } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
-                                first_array.push(row)
                             }
 
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
+                            console.log('Yes Pool')
                         }
-                        else {
-                            first_array.push(row);
-                        }
+
+                    } else {
+                        first_array.push(row);
                     }
                 }
                 if (!zips.includes(current_zip)) {
@@ -347,6 +347,8 @@ module.exports.zipPriceSpecs = async (req, res) => {
                         second_array.push(row)
                     }
                 }
+            } else {
+                second_array = first_array
             }
 
 
@@ -356,6 +358,8 @@ module.exports.zipPriceSpecs = async (req, res) => {
                         third_array.push(row)
                     }
                 }
+            } else {
+                third_array = second_array
             }
             third_array.forEach((row, index) => {
                 let existingEntr = zips_array.find(entry => entry.closing_date === row['Close Date']);
