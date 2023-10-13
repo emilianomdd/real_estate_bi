@@ -16,21 +16,20 @@
 
                 <form action="/render_zip_count" style="margin-bottom: 20px;">
                     <label for="zipDropdown" style="font-weight: bold;">Look up specific Zip Codes:</label><br>
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Select Zip Codes</button>
-                        <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
-                            <% zips.forEach(zip=> { %>
+                    <div class="dropdown mb-3">
+                        <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Select Zip Codes
+                        </button>
+                        <div class="dropdown-menu w-100" aria-labelledby="zipDropdown" style="max-height: 200px; overflow-y: auto;">
+                            <% for (let zip of zips) { %>
                                 <div class="d-flex align-items-center px-3">
                                     <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
-                                    <label for="<%=zip%>">
-                                        <%=zip%>
-                                    </label>
+                                    <label for="<%=zip%>"><%=zip%></label>
                                 </div>
-                                <% }) %>
+                            <% } %>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success w-100 mt-2">Submit</button>
+                    <button type="submit" class="btn btn-success w-100 mt-2">Filter By Zip Code</button>
                 </form>
 
                 <!-- Property Specifications -->
@@ -58,7 +57,7 @@
                             <label><input type="radio" name="garage_spaces" value="2"> 2</label>
                         </fieldset>
 
-                        <button type="submit" class="btn btn-success w-100">Submit</button>
+                        <button type="submit" class="btn btn-success w-100">Filter All Homes By Specs</button>
                     </form>
                 </div>
 

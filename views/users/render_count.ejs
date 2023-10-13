@@ -12,20 +12,20 @@
             <!-- Zip Dropdown -->
             <form action="/render_zip_count">
                 <label for="zipDropdown" style="font-weight: bold;">Look up specific Zip Codes:</label><br>
-                <div class="dropdown">
+                <div class="dropdown mb-3">
                     <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Select Zip Codes
                     </button>
-                    <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
-                        <% for (let zip of zips){ %>
+                    <div class="dropdown-menu w-100" aria-labelledby="zipDropdown" style="max-height: 200px; overflow-y: auto;">
+                        <% for (let zip of zips) { %>
                             <div class="d-flex align-items-center px-3">
                                 <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
                                 <label for="<%=zip%>"><%=zip%></label>
                             </div>
-                        <%}%>
+                        <% } %>
                     </div>
                 </div>
-                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">Submit</button>
+                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">Filter All Homes By Zip Code</button>
             </form>
             
             <!-- Specs Filters -->
@@ -52,7 +52,7 @@
                 </fieldset>
 
                 <!-- Submit Button -->
-                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px; margin-top: 10px;">Submit</button>
+                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px; margin-top: 10px;">Filter All Homes by Specs</button>
             </form>
         </div>
     </div>

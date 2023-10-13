@@ -14,7 +14,7 @@
                         <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Select Zip Codes
                         </button>
-                        <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
+                        <div class="dropdown-menu w-100" aria-labelledby="zipDropdown" style="max-height: 200px; overflow-y: auto;">
                             <% for (let zip of zips) { %>
                                 <div class="d-flex align-items-center px-3">
                                     <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
@@ -23,8 +23,8 @@
                             <% } %>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Submit</button>
-                </form>
+                    <button type="submit" class="btn btn-success w-100">Filter All Homes By Zip Code</button>
+                 </form>
             </div>
 
             <div style="background-color: #f8f8f8; padding: 20px; border-radius: 5px;">
@@ -51,7 +51,7 @@
                     </fieldset>
 
                     <button type="submit"
-                        style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Submit</button>
+                        style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Filter Homes in <%=reqd_zips%> By Specs</button>
                 </form>
             </div>
 

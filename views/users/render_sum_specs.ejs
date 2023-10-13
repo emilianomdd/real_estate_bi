@@ -17,51 +17,46 @@
                 <div class="form-container my-3 p-3 bg-light rounded mb-3">
                     <form action="/render_zip_sum">
                         <div class="dropdown mb-3">
-                            <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Select Zip Codes
                             </button>
-                            <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
+                            <div class="dropdown-menu w-100" aria-labelledby="zipDropdown" style="max-height: 200px; overflow-y: auto;">
                                 <% for (let zip of zips) { %>
                                     <div class="d-flex align-items-center px-3">
                                         <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
-                                        <label for="<%=zip%>">
-                                            <%=zip%>
-                                        </label>
+                                        <label for="<%=zip%>"><%=zip%></label>
                                     </div>
-                                    <% } %>
+                                <% } %>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Submit</button>
-                    </form>
+                        <button type="submit" class="btn btn-success w-100">Filter All Homes By Zip Code</button>
+                      </form>
                 </div>
 
                 <!-- Specifications Form -->
                 <div class="form-container p-3 bg-light rounded mb-3">
                     <form action="/render_zip_sum_specs">
-                        <fieldset>
-                            <legend>Property Specifications:</legend>
-                            <label for="pool">Pool Spec:</label>
-                            <select name="pool" id="pool">
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
-                            </select><br>
-
-                            <label for="price_range">Price Range:</label>
-                            <select name="price_range" id="price_range">
-                                <option value="1.2">1.2 - 1.4M</option>
-                                <option value="1.7">1.7 - 2.1M</option>
-                                <option value="2.7">2.7 - 3.5M</option>
-                            </select><br>
-
-                            <label for="garage_spaces"># of Garage Spaces:</label>
-                            <select name="garage_spaces" id="garage_spaces">
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                            </select>
+                        <fieldset class="mb-3 p-2 border rounded">
+                            <legend class="fs-5">Pool Spec:</legend>
+                            <label><input type="radio" name="pool" value="yes"> Yes</label>
+                            <label><input type="radio" name="pool" value="no"> No</label>
                         </fieldset>
-                        <button type="submit" class="btn btn-success w-100 mt-3">Submit</button>
+    
+                        <fieldset class="mb-3 p-2 border rounded">
+                            <legend class="fs-5">Price Range:</legend>
+                            <label><input type="radio" name="price_range" value="1.2"> 1.2 - 1.4M</label>
+                            <label><input type="radio" name="price_range" value="1.7"> 1.7 - 2.1M</label>
+                            <label><input type="radio" name="price_range" value="2.7"> 2.7 - 3.5M</label>
+                        </fieldset>
+    
+                        <fieldset class="mb-3 p-2 border rounded">
+                            <legend class="fs-5">Number of Garage Spaces:</legend>
+                            <label><input type="radio" name="garage_spaces" value="0"> 0</label>
+                            <label><input type="radio" name="garage_spaces" value="1"> 1</label>
+                            <label><input type="radio" name="garage_spaces" value="2"> 2</label>
+                        
+                        </fieldset>
+                        <button type="submit" class="btn btn-success w-100 mt-3">Filter All Homes By Specs</button>
                     </form>
                 </div>
 

@@ -13,23 +13,22 @@
                 <div class="form-container my-3 p-3 bg-light rounded">
                     <form action="/render_zip_prices">
                         <div class="dropdown mb-3">
-                            <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Select Zip Codes
-                            </button>
-                            <div class="dropdown-menu w-100" aria-labelledby="zipDropdown">
-                                <% for (let zip of zips) { %>
-                                    <div class="form-check px-3">
-                                        <input type="checkbox" class="form-check-input" id="<%=zip%>" name="zip"
-                                            value="<%=zip%>">
-                                        <label class="form-check-label" for="<%=zip%>">
-                                            <%=zip%>
-                                        </label>
-                                    </div>
+                            
+                            <div class="dropdown mb-3">
+                                <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="zipDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Select Zip Codes
+                                </button>
+                                <div class="dropdown-menu w-100" aria-labelledby="zipDropdown" style="max-height: 200px; overflow-y: auto;">
+                                    <% for (let zip of zips) { %>
+                                        <div class="d-flex align-items-center px-3">
+                                            <input type="checkbox" class="mr-2" id="<%=zip%>" name="zip" value="<%=zip%>">
+                                            <label for="<%=zip%>"><%=zip%></label>
+                                        </div>
                                     <% } %>
+                                </div>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Submit</button>
+                        <button type="submit" class="btn btn-success w-100">Filter All Homes By Zip Code</button>
                     </form>
                 </div>
 
@@ -57,7 +56,7 @@
                             <label><input type="radio" name="garage_spaces" value="2"> 2</label>
                         </fieldset>
     
-                        <button type="submit" class="btn btn-success w-100">Submit</button>
+                        <button type="submit" class="btn btn-success w-100">Filter Homes in <%=reqd_zips%> By Specs</button>
                     </form>
                 </div>
 

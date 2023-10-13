@@ -65,22 +65,22 @@ module.exports.sumSpecs = async (req, res) => {
             const closing_data = [];
             var zips = [];
             const first_array = []
-            const second_array = []
-            const third_array = []
+            var second_array = []
+            var third_array = []
             rows.forEach((row, index) => {
                 const current_zip = `${row['Postal Code']}`
                 if (specs.pool) {
                     if (specs.pool == 'no') {
                         if (row['Pool Features'] == 'None') {
                             first_array.push(row)
-                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
-                            first_array.push(row)
                         }
 
+                    } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                        first_array.push(row)
                     }
-                    else {
-                        first_array.push(row);
-                    }
+
+                } else {
+                    first_array.push(row);
                 }
 
                 if (!zips.includes(current_zip)) {
@@ -137,7 +137,7 @@ module.exports.sumSpecs = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1);  // Move one month forward
 
                 let sum = zips_array
                     .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
@@ -149,10 +149,11 @@ module.exports.sumSpecs = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Sums:", sums);
             console.log(zips)
-            const name = `Value Summation of 1M+ Homes Closed Every 15 Days with the following specs: ${specs}`;
+            const name = `Value Summation of 1M+ Homes Closed Every Month with the following specs: ${specs}`;
             res.render('users/render_only_sum_specs', { segments, sums, name, zips, reqd_zips, specs });
         }
 
@@ -162,7 +163,7 @@ module.exports.sumSpecs = async (req, res) => {
 
 }
 module.exports.zipSumSpecs = async (req, res) => {
-    console.log('renderSegSum');
+    console.log('renderSegSum 166');
     console.log(req.query)
     await client.connect();
     const db = client.db('Real_Estate');
@@ -200,10 +201,10 @@ module.exports.zipSumSpecs = async (req, res) => {
                         if (specs.pool == 'no') {
                             if (row['Pool Features'] == 'None') {
                                 first_array.push(row)
-                            } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
-                                first_array.push(row)
                             }
 
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
                         }
 
                     } else {
@@ -264,7 +265,7 @@ module.exports.zipSumSpecs = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1); // Moving to the next month
 
                 let sum = zips_array
                     .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
@@ -276,10 +277,11 @@ module.exports.zipSumSpecs = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Sums:", sums);
             console.log(zips)
-            const name = `Value Summation of 1M+ Homes Closed Every 15 Days in the following zip code: ${reqd_zips} and with the following specs: ${specs}`;
+            const name = `Value Summation of 1M+ Homes Closed Every Month in the following zip code: ${reqd_zips} and with the following specs: ${specs}`;
             res.render('users/render_sum_specs', { segments, sums, name, zips, reqd_zips, specs });
         }
 
@@ -449,10 +451,10 @@ module.exports.zipCountSpecs = async (req, res) => {
                         if (specs.pool == 'no') {
                             if (row['Pool Features'] == 'None') {
                                 first_array.push(row)
-                            } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
-                                first_array.push(row)
                             }
 
+                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                            first_array.push(row)
                         }
 
                     } else {
@@ -514,7 +516,8 @@ module.exports.zipCountSpecs = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1); // Move to the next month
+
                 let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
 
                 segments.push(startDate);
@@ -523,9 +526,10 @@ module.exports.zipCountSpecs = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Counts:", counts);
-            const name = `Value Summation of 1M+ Homes Closed Every 15 Days in the following zip code: ${reqd_zips} and with the following specs: ${specs}`;
+            const name = `Value Summation of 1M+ Homes Closed Every Month in the following zip code: ${reqd_zips} and with the following specs: ${specs}`;
             res.render('users/render_count_specs', { segments, counts, name, zips, reqd_zips, specs });
         }
 
@@ -572,14 +576,14 @@ module.exports.countSpecs = async (req, res) => {
                     if (specs.pool == 'no') {
                         if (row['Pool Features'] == 'None') {
                             first_array.push(row)
-                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
-                            first_array.push(row)
                         }
 
+                    } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                        first_array.push(row)
                     }
-                    else {
-                        first_array.push(row);
-                    }
+
+                } else {
+                    first_array.push(row);
                 }
 
                 if (!zips.includes(current_zip)) {
@@ -637,7 +641,8 @@ module.exports.countSpecs = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1); // Move to the next month
+
                 let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
 
                 segments.push(startDate);
@@ -646,9 +651,10 @@ module.exports.countSpecs = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Counts:", counts);
-            const name = `Value Summation of 1M+ Homes Closed Every 15 Days with the following specs: ${specs}`;
+            const name = `Value Summation of 1M+ Homes Closed Every Month with the following specs: ${specs}`;
             res.render('users/render_count_only_specs', { segments, counts, name, zips, reqd_zips, specs });
 
 
@@ -687,22 +693,22 @@ module.exports.priceSpecs = async (req, res) => {
             const closing_data = [];
             var zips = [];
             const first_array = []
-            const second_array = []
-            const third_array = []
+            var second_array = []
+            var third_array = []
             rows.forEach((row, index) => {
                 const current_zip = `${row['Postal Code']}`
                 if (specs.pool) {
                     if (specs.pool == 'no') {
                         if (row['Pool Features'] == 'None') {
                             first_array.push(row)
-                        } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
-                            first_array.push(row)
                         }
 
+                    } else if (row['Pool Features'] != 'None' && specs.pool != 'no') {
+                        first_array.push(row)
                     }
-                    else {
-                        first_array.push(row);
-                    }
+
+                } else {
+                    first_array.push(row);
                 }
                 if (!zips.includes(current_zip)) {
                     zips.push(current_zip)
@@ -1133,7 +1139,7 @@ module.exports.zipSegSum = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1); // Move to the next month
 
                 let sum = closing_data
                     .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
@@ -1145,9 +1151,10 @@ module.exports.zipSegSum = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Sums:", sums);
-            const name = `Value Summation of Homes Sold Every 15 Days in: ${reqd_zips}`;
+            const name = `Value Summation of Homes Sold Every Month in: ${reqd_zips}`;
             res.render('users/render_sum_zip', { segments, sums, name, zips, reqd_zips });
         }
 
@@ -1204,7 +1211,7 @@ module.exports.renderSegSum = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1); // Advance to the next month
 
                 let sum = closing_data
                     .filter(property => new Date(property.closing_date) >= startDate && new Date(property.closing_date) < segmentEnd)
@@ -1216,10 +1223,11 @@ module.exports.renderSegSum = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Sums:", sums);
             console.log(zips)
-            const name = 'Value Summation of 1M+ Homes Closed Every 15 Days';
+            const name = 'Value Summation of 1M+ Homes Closed Every Month';
             res.render('users/render_sum', { segments, sums, name, zips });
         }
 
@@ -1393,7 +1401,8 @@ module.exports.renderCount = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1); // Move one month forward
+
                 let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
 
                 segments.push(startDate);
@@ -1402,9 +1411,10 @@ module.exports.renderCount = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Counts:", counts);
-            const name = 'Homes Over 1M+ Closed Every 15 Days'
+            const name = 'Homes Over 1M+ Closed Every Month'
             res.render('users/render_count', { segments, counts, name, zips, ids })
         }
     } catch (e) {
@@ -1463,7 +1473,7 @@ module.exports.renderZipCount = async (req, res) => {
 
             while (startDate <= endDate) {
                 let segmentEnd = new Date(startDate);
-                segmentEnd.setDate(segmentEnd.getDate() + 15);
+                segmentEnd.setMonth(segmentEnd.getMonth() + 1);  // Move one month forward
 
                 let count = closingDates.filter(date => date >= startDate && date < segmentEnd).length;
 
@@ -1473,9 +1483,10 @@ module.exports.renderZipCount = async (req, res) => {
                 startDate = segmentEnd;
             }
 
+
             console.log("Segments:", segments);
             console.log("Counts:", counts);
-            const name = `Number of Homes Over 1M+ Closed in: ${reqd_zips}`
+            const name = `Number of Homes Over 1M+ Closed by Month in: ${reqd_zips}`
             console.log(ids)
             res.render('users/render_count_zip', { segments, counts, name, zips, ids, reqd_zips })
         }
